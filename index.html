@@ -42,24 +42,23 @@
         .prog-fill { height: 100%; background: var(--p); transition: 0.4s ease; }
         
         .q-label { font-size: 22px; font-weight: 800; line-height: 1.2; margin-bottom: 20px; color: var(--text); width: 100%; }
-        .input-area { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
+        .input-area { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; overflow-y: auto; }
         
         input[type=time], input[type=number], input[type=text], input[type=search] { border: none; border-bottom: 2px solid var(--border); font-size: 24px; font-weight: 800; width: 100%; text-align: center; outline: none; background: transparent; padding: 12px; color: var(--text); border-radius: 0; }
         input[type=search] { font-size: 14px; text-align: left; padding: 10px 16px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 15px; background: var(--card); }
         
-        /* Option Selection Styles */
-        .option-container { display: flex; flex-direction: column; gap: 10px; width: 100%; }
-        .opt-pill { background: var(--accent); padding: 14px 20px; border-radius: 16px; cursor: pointer; border: 2px solid transparent; font-weight: 700; width: 100%; text-align: center; transition: 0.2s; color: var(--text); font-size: 15px; }
-        .opt-pill.active { border-color: var(--p); background: rgba(99,102,241,0.1); color: var(--p); transform: scale(1.02); }
+        .option-container { display: flex; flex-direction: column; gap: 8px; width: 100%; padding: 5px 0; }
+        .opt-pill { background: var(--accent); padding: 12px 18px; border-radius: 16px; cursor: pointer; border: 2px solid transparent; font-weight: 700; width: 100%; text-align: center; transition: 0.2s; color: var(--text); font-size: 15px; }
+        .opt-pill.active { border-color: var(--p); background: rgba(99,102,241,0.1); color: var(--p); transform: scale(1.01); }
 
-        .switch { position: relative; display: inline-block; width: 56px; height: 32px; }
+        .switch { position: relative; display: inline-block; width: 56px; height: 32px; flex-shrink: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 34px; }
         .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: var(--p); }
         input:checked + .slider:before { transform: translateX(24px); }
         
-        .controls { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; gap: 10px; width: 100%; }
+        .controls { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; gap: 10px; width: 100%; }
         button { border-radius: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; border: none; font-family: inherit; }
         .btn-p { background: var(--p); color: #fff; padding: 14px 28px; font-size: 16px; box-shadow: 0 4px 10px rgba(99,102,241,0.2); }
         .btn-sec { background: none; color: var(--sub); font-size: 15px; padding: 12px; }
@@ -81,7 +80,6 @@
 
         footer { margin-top: 25px; color: var(--sub); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.8; text-align: center; }
         
-        /* Modal UI */
         #customModal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; backdrop-filter: blur(2px); }
         .modal-card { background: var(--card); border-radius: 24px; padding: 25px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
     </style>
@@ -89,7 +87,7 @@
 <body>
     <div class="wrap">
         <header>
-            <div><h1>🦴 Skeleton</h1><small id="timeStatus">V 1.5.2 • Structured Options</small></div>
+            <div><h1>🦴 Skeleton</h1><small id="timeStatus">V 1.5.3 • Fully Functional</small></div>
             <div style="display:flex; gap:8px;">
                 <button class="btn-sec" onclick="showView('history')">📅</button>
                 <button class="btn-sec" onclick="showView('setup')">⚙️</button>
@@ -99,7 +97,6 @@
         <div class="chip-grid" id="ctxGrid"></div>
 
         <main class="card">
-            <!-- WELCOME VIEW -->
             <div id="welcomeView">
                 <div style="text-align:center; padding: 50px 0;">
                     <div style="font-size: 60px; margin-bottom: 20px;">🦴</div>
@@ -109,7 +106,6 @@
                 </div>
             </div>
 
-            <!-- LOGGER VIEW -->
             <div id="loggerView" class="hidden">
                 <div class="prog"><div class="prog-fill" id="progBar"></div></div>
                 <div style="font-size:11px; font-weight:900; color:var(--p); margin-bottom:12px; letter-spacing:1px;" id="qCat">CONTEXT</div>
@@ -125,7 +121,6 @@
                 <div style="text-align:center; margin-top:20px;"><small id="step" style="font-size:11px; font-weight:900; color:#cbd5e1;">1 / 1</small></div>
             </div>
 
-            <!-- HISTORY VIEW -->
             <div id="historyView" class="hidden">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                     <b style="font-size:12px; letter-spacing:1px; color:var(--sub);">HISTORY ARCHIVE</b>
@@ -136,7 +131,6 @@
                 <div id="dayDetail" class="scroll"></div>
             </div>
 
-            <!-- SETUP VIEW -->
             <div id="setupView" class="hidden">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                     <b style="font-size:12px; letter-spacing:1px; color:var(--sub);">EDITORIAL CONFIG</b>
@@ -149,7 +143,6 @@
                 <button class="btn-p" style="width:100%; margin-top:20px;" onclick="saveConfig()">Save All Changes</button>
             </div>
 
-            <!-- SUMMARY VIEW -->
             <div id="summaryView" class="hidden" style="text-align:center;">
                 <div style="font-size:50px; margin-bottom:20px;">✨</div>
                 <h2 style="margin-bottom:10px;">Logged Successfully</h2>
@@ -157,10 +150,9 @@
                 <button class="btn-p" style="width:100%" id="dlToday">Download .txt</button>
             </div>
         </main>
-        <footer>V 1.5.2 • OPTIONS & ORDER</footer>
+        <footer>V 1.5.3 • OPTIONS & ORDER</footer>
     </div>
 
-    <!-- Custom Modal -->
     <div id="customModal" class="hidden">
         <div class="modal-card">
             <h3 id="modalTitle">Notice</h3>
@@ -173,7 +165,6 @@
     </div>
 
     <script>
-        // --- DATA PERSISTENCE ---
         const getLocalDay = (dateObj = new Date()) => {
             const year = dateObj.getFullYear();
             const month = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -223,7 +214,7 @@
             activeCtx = id;
             filtered = questions.filter(q => q.c.includes(id));
             if(!filtered.length) {
-                showModal("Configuration Error", "No prompts found for this context tab. Go to Settings to add some.");
+                showModal("Configuration Error", "No prompts found for this context tab.");
                 return;
             }
             document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
@@ -236,8 +227,7 @@
 
         function fastStart() {
             const h = new Date().getHours();
-            const id = h < 12 ? 'morning' : (h < 17 ? 'afternoon' : 'evening');
-            selCtx(id);
+            selCtx(h < 12 ? 'morning' : (h < 17 ? 'afternoon' : 'evening'));
         }
 
         function renderStep() {
@@ -251,185 +241,134 @@
             const area = document.getElementById('qInp'); 
             area.innerHTML = '';
             
-            // Get current value or use default
             let val = answers[q.id];
             if(val === undefined) val = q.d;
 
             if(q.t==='time') {
-                area.innerHTML = `<input type="time" id="i-${q.id}" value="${val}">`;
+                const inp = document.createElement('input');
+                inp.type = 'time'; inp.id = `i-${q.id}`; inp.value = val;
+                area.appendChild(inp);
             } 
             else if(q.t==='range') {
-                area.innerHTML = `
-                    <div style="width:100%; text-align:center;">
-                        <div style="font-size:55px; font-weight:900; color:var(--p);" id="rv-${q.id}">${val}</div>
-                        <input type="range" min="0" max="10" step="0.5" id="i-${q.id}" value="${val}" oninput="document.getElementById('rv-${q.id}').innerText=this.value">
-                    </div>`;
+                const wrap = document.createElement('div');
+                wrap.style.width = '100%'; wrap.style.textAlign = 'center';
+                wrap.innerHTML = `<div style="font-size:55px; font-weight:900; color:var(--p);" id="rv-${q.id}">${val}</div>`;
+                const inp = document.createElement('input');
+                inp.type = 'range'; inp.min = '0'; inp.max = '10'; inp.step = '0.5'; inp.id = `i-${q.id}`; inp.value = val;
+                inp.oninput = () => document.getElementById(`rv-${q.id}`).innerText = inp.value;
+                wrap.appendChild(inp);
+                area.appendChild(wrap);
             } 
             else if(q.t==='toggle') {
-                area.innerHTML = `<label class="switch"><input type="checkbox" id="i-${q.id}" ${val ? 'checked' : ''}><span class="slider"></span></label>`;
+                const lbl = document.createElement('label'); lbl.className = 'switch';
+                lbl.innerHTML = `<input type="checkbox" id="i-${q.id}" ${val ? 'checked' : ''}><span class="slider"></span>`;
+                area.appendChild(lbl);
             } 
             else if(q.t==='textarea') {
-                area.innerHTML = `<textarea id="i-${q.id}" style="width:100%; height:180px; border:1px solid var(--border); border-radius:18px; padding:15px; background:var(--accent); color:var(--text); font-size:16px;">${val}</textarea>`;
+                const txt = document.createElement('textarea');
+                txt.id = `i-${q.id}`;
+                txt.style.width = '100%'; txt.style.height = '180px';
+                txt.style.border = '1px solid var(--border)'; txt.style.borderRadius = '18px';
+                txt.style.padding = '15px'; txt.style.background = 'var(--accent)';
+                txt.style.color = 'var(--text)'; txt.style.fontSize = '16px';
+                txt.value = val;
+                area.appendChild(txt);
             } 
             else if(q.t==='select' || q.t==='multi') {
                 const options = (q.o || "").split(',').map(o => o.trim()).filter(o => o);
-                if(!options.length) {
-                    area.innerHTML = `<p style="color:var(--err); font-size:12px;">No options defined in settings.</p>`;
-                } else {
-                    const container = document.createElement('div');
-                    container.className = 'option-container';
-                    options.forEach(opt => {
-                        const pill = document.createElement('div');
-                        pill.className = 'opt-pill';
-                        const isActive = q.t === 'multi' ? (Array.isArray(val) && val.includes(opt)) : (val === opt);
-                        if(isActive) pill.classList.add('active');
-                        pill.innerText = opt;
-                        pill.onclick = () => toggleOption(q.id, opt, q.t);
-                        container.appendChild(pill);
-                    });
-                    area.appendChild(container);
-                }
+                const container = document.createElement('div');
+                container.className = 'option-container';
+                options.forEach(opt => {
+                    const pill = document.createElement('div');
+                    pill.className = 'opt-pill';
+                    const isActive = q.t === 'multi' ? (Array.isArray(val) && val.includes(opt)) : (val === opt);
+                    if(isActive) pill.classList.add('active');
+                    pill.innerText = opt;
+                    pill.onclick = () => toggleOption(q.id, opt, q.t);
+                    container.appendChild(pill);
+                });
+                area.appendChild(container);
             } 
-            else { // Text default
-                area.innerHTML = `<input type="text" id="i-${q.id}" value="${val}" placeholder="Type here...">`;
+            else {
+                const inp = document.createElement('input');
+                inp.type = 'text'; inp.id = `i-${q.id}`; inp.value = val; inp.placeholder = "Type here...";
+                area.appendChild(inp);
             }
         }
 
         function toggleOption(qid, opt, type) {
             if(type === 'select') {
                 answers[qid] = opt;
-            } else { // Multi
+            } else {
                 if(!Array.isArray(answers[qid])) answers[qid] = [];
-                if(answers[qid].includes(opt)) {
-                    answers[qid] = answers[qid].filter(o => o !== opt);
-                } else {
-                    answers[qid].push(opt);
-                }
+                if(answers[qid].includes(opt)) answers[qid] = answers[qid].filter(o => o !== opt);
+                else answers[qid].push(opt);
             }
             renderStep();
         }
 
-        function handleNext() {
+        function captureCurrent() {
             const q = filtered[cur];
+            if(!q) return;
             const el = document.getElementById(`i-${q.id}`);
-            
-            // Only capture values from elements for standard inputs
             if(q.t !== 'select' && q.t !== 'multi') {
-                if(q.t === 'toggle') answers[q.id] = el.checked;
-                else answers[q.id] = el.value;
+                if(!el) return;
+                answers[q.id] = q.t === 'toggle' ? el.checked : el.value;
             } else if (answers[q.id] === undefined) {
-                // Handle default for select/multi if no interaction occurred
                 answers[q.id] = q.d;
             }
-            
+        }
+
+        function handleNext() {
+            captureCurrent();
             moveStep();
         }
 
-        function handleSkip() {
-            moveStep();
-        }
+        function handleSkip() { moveStep(); }
 
         function moveStep() {
-            if(cur < filtered.length - 1) { 
-                cur++; 
-                renderStep(); 
-            } else { 
-                saveToHistory(); 
-            }
+            if(cur < filtered.length - 1) { cur++; renderStep(); }
+            else { saveToHistory(); }
         }
 
         function handleBack() {
-            if(cur > 0) { 
-                cur--; 
-                renderStep(); 
-            }
+            captureCurrent();
+            if(cur > 0) { cur--; renderStep(); }
         }
 
         function saveToHistory() {
             const day = getLocalDay();
             if(!history[day]) history[day] = [];
-            
-            history[day].push({
-                ctx: activeCtx, 
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 
-                ans: {...answers}
-            });
-            
+            history[day].push({ ctx: activeCtx, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), ans: {...answers} });
             localStorage.setItem('skel_h_v7', JSON.stringify(history));
-            
             showView('summary');
-            document.getElementById('summList').innerHTML = filtered
-                .map(q => {
-                    const ans = answers[q.id];
-                    if(ans === undefined) return '';
-                    const displayVal = Array.isArray(ans) ? ans.join(', ') : (q.t === 'toggle' ? (ans ? 'Yes' : 'No') : ans);
-                    return `<div style="padding:12px 0; border-bottom:1px solid var(--border); font-size:13px;">
-                                <b style="color:var(--sub); font-size:9px; text-transform:uppercase; letter-spacing:0.5px;">${q.l}</b><br>
-                                <span style="font-weight:700;">${displayVal}</span>
-                            </div>`;
-                }).join('');
+            document.getElementById('summList').innerHTML = filtered.map(q => {
+                const ans = answers[q.id];
+                if(ans === undefined) return '';
+                const displayVal = Array.isArray(ans) ? ans.join(', ') : (q.t === 'toggle' ? (ans ? 'Yes' : 'No') : ans);
+                return `<div style="padding:12px 0; border-bottom:1px solid var(--border); font-size:13px;"><b style="color:var(--sub); font-size:9px; text-transform:uppercase;">${q.l}</b><br><span style="font-weight:700;">${displayVal}</span></div>`;
+            }).join('');
         }
 
-        // --- CONFIGURATION / EDITING ---
-
-        function renderEditor() {
-            // TABS REORDERING & EDITING
-            document.getElementById('ctxEditList').innerHTML = `
-                <div style="display:flex; justify-content:space-between; margin:20px 0 12px 0;">
-                    <b style="font-size:10px; color:var(--sub); letter-spacing:1px;">TABS (CONTEXTS)</b>
-                    <button onclick="addCtx()" style="color:var(--p); font-size:11px; font-weight:900; background:none;">+ ADD TAB</button>
-                </div>` + contexts.map((c, i) => `
-                <div class="edit-row">
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <input style="width:40px; text-align:center; font-size:22px; border:none; background:transparent;" id="ci-${i}" value="${c.i}">
-                        <input style="flex:1; font-weight:800; border:none; background:transparent; font-size:15px; color:var(--text);" id="cl-${i}" value="${c.l}">
-                        <div style="display:flex; gap:4px;">
-                            <button onclick="moveCtx(${i},-1)" class="order-btn">←</button>
-                            <button onclick="moveCtx(${i},1)" class="order-btn">→</button>
-                            <button onclick="delCtx(${i})" style="color:var(--err); background:none; font-weight:900; margin-left:8px;">✕</button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-
-            // PROMPTS REORDERING & EDITING
-            document.getElementById('qEditList').innerHTML = `
-                <div style="display:flex; justify-content:space-between; margin:20px 0 12px 0;">
-                    <b style="font-size:10px; color:var(--sub); letter-spacing:1px;">PROMPTS (QUESTIONS)</b>
-                    <button onclick="addQ()" style="color:var(--p); font-size:11px; font-weight:900; background:none;">+ ADD PROMPT</button>
-                </div>` + questions.map((q, i) => `
-                <div class="edit-row">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
-                        <input style="width:75%; font-weight:800; border:none; border-bottom:1px solid var(--border); background:transparent; font-size:15px; color:var(--text);" id="ql-${i}" value="${q.l}">
-                        <div style="display:flex; gap:4px;">
-                            <button onclick="moveQ(${i},-1)" class="order-btn">↑</button>
-                            <button onclick="moveQ(${i},1)" class="order-btn">↓</button>
-                        </div>
-                    </div>
-                    <div style="margin-bottom:12px; display:flex; flex-wrap:wrap;">
-                        ${contexts.map(c => `<span class="ctx-pill ${q.c.includes(c.id)?'on':''}" onclick="tglQC(${i},'${c.id}')">${c.i} ${c.l}</span>`).join('')}
-                    </div>
-                    <div style="display:flex; gap:10px; margin-bottom:10px;">
-                         <select id="qt-${i}" onchange="renderEditor()" style="flex:1; font-size:11px; font-weight:900; background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:6px;">
-                            <option value="toggle" ${q.t==='toggle'?'selected':''}>TOGGLE (Y/N)</option>
-                            <option value="select" ${q.t==='select'?'selected':''}>CHOOSE ONE</option>
-                            <option value="multi" ${q.t==='multi'?'selected':''}>CHOOSE MANY</option>
-                            <option value="time" ${q.t==='time'?'selected':''}>TIME</option>
-                            <option value="range" ${q.t==='range'?'selected':''}>RANGE (0-10)</option>
-                            <option value="text" ${q.t==='text'?'selected':''}>TEXT</option>
-                            <option value="textarea" ${q.t==='textarea'?'selected':''}>LARGE TEXT</option>
-                        </select>
-                        <button onclick="delQ(${i})" style="color:var(--err); background:none; font-size:11px; font-weight:900;">DELETE</button>
-                    </div>
-                    ${(q.t==='select' || q.t==='multi') ? `
-                        <input id="qo-${i}" placeholder="Options: Apple, Banana, Cherry..." value="${q.o || ''}" 
-                               style="width:100%; font-size:11px; padding:10px; background:var(--card); border:1px solid var(--border); border-radius:8px; color:var(--text); font-weight:600;">
-                    ` : ''}
-                </div>
-            `).join('');
+        function syncUItoState() {
+            contexts.forEach((c, i) => {
+                const iEl = document.getElementById('ci-'+i);
+                const lEl = document.getElementById('cl-'+i);
+                if(iEl) c.i = iEl.value;
+                if(lEl) c.l = lEl.value;
+            });
+            questions.forEach((q, i) => {
+                const lEl = document.getElementById('ql-'+i);
+                const tEl = document.getElementById('qt-'+i);
+                const oEl = document.getElementById('qo-'+i);
+                if(lEl) q.l = lEl.value;
+                if(tEl) q.t = tEl.value;
+                if(oEl) q.o = oEl.value;
+            });
         }
 
         function moveCtx(i, dir) {
+            syncUItoState();
             const target = i + dir;
             if(target < 0 || target >= contexts.length) return;
             [contexts[i], contexts[target]] = [contexts[target], contexts[i]];
@@ -437,42 +376,40 @@
         }
 
         function moveQ(i, dir) {
+            syncUItoState();
             const target = i + dir;
             if(target < 0 || target >= questions.length) return;
             [questions[i], questions[target]] = [questions[target], questions[i]];
             renderEditor();
         }
 
+        function renderEditor() {
+            document.getElementById('ctxEditList').innerHTML = `<div style="display:flex; justify-content:space-between; margin:20px 0 12px 0;"><b style="font-size:10px; color:var(--sub); letter-spacing:1px;">TABS</b><button onclick="addCtx()" style="color:var(--p); font-size:11px; font-weight:900; background:none;">+ ADD</button></div>` + contexts.map((c, i) => `
+                <div class="edit-row"><div style="display:flex; gap:10px; align-items:center;"><input style="width:40px; text-align:center; font-size:22px; border:none; background:transparent;" id="ci-${i}" value="${c.i}"><input style="flex:1; font-weight:800; border:none; background:transparent; font-size:15px; color:var(--text);" id="cl-${i}" value="${c.l}"><div style="display:flex; gap:4px;"><button onclick="moveCtx(${i},-1)" class="order-btn">←</button><button onclick="moveCtx(${i},1)" class="order-btn">→</button><button onclick="delCtx(${i})" style="color:var(--err); background:none; font-weight:900; margin-left:8px;">✕</button></div></div></div>`).join('');
+
+            document.getElementById('qEditList').innerHTML = `<div style="display:flex; justify-content:space-between; margin:20px 0 12px 0;"><b style="font-size:10px; color:var(--sub); letter-spacing:1px;">PROMPTS</b><button onclick="addQ()" style="color:var(--p); font-size:11px; font-weight:900; background:none;">+ ADD</button></div>` + questions.map((q, i) => `
+                <div class="edit-row"><div style="display:flex; justify-content:space-between; margin-bottom:12px;"><input style="width:75%; font-weight:800; border:none; border-bottom:1px solid var(--border); background:transparent; font-size:15px; color:var(--text);" id="ql-${i}" value="${q.l}"><div style="display:flex; gap:4px;"><button onclick="moveQ(${i},-1)" class="order-btn">↑</button><button onclick="moveQ(${i},1)" class="order-btn">↓</button></div></div><div style="margin-bottom:12px; display:flex; flex-wrap:wrap;">${contexts.map(c => `<span class="ctx-pill ${q.c.includes(c.id)?'on':''}" onclick="tglQC(${i},'${c.id}')">${c.i} ${c.l}</span>`).join('')}</div><div style="display:flex; gap:10px; margin-bottom:10px;"><select id="qt-${i}" onchange="syncUItoState(); renderEditor()" style="flex:1; font-size:11px; font-weight:900; background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:6px;"><option value="toggle" ${q.t==='toggle'?'selected':''}>TOGGLE</option><option value="select" ${q.t==='select'?'selected':''}>CHOOSE ONE</option><option value="multi" ${q.t==='multi'?'selected':''}>CHOOSE MANY</option><option value="time" ${q.t==='time'?'selected':''}>TIME</option><option value="range" ${q.t==='range'?'selected':''}>RANGE</option><option value="text" ${q.t==='text'?'selected':''}>TEXT</option><option value="textarea" ${q.t==='textarea'?'selected':''}>LARGE TEXT</option></select><button onclick="delQ(${i})" style="color:var(--err); background:none; font-size:11px; font-weight:900;">DELETE</button></div>${(q.t==='select' || q.t==='multi') ? `<input id="qo-${i}" placeholder="Options: Apple, Banana..." value="${q.o || ''}" style="width:100%; font-size:11px; padding:10px; background:var(--card); border:1px solid var(--border); border-radius:8px; color:var(--text); font-weight:600;">` : ''}</div>`).join('');
+        }
+
         function tglQC(qi, ci) {
+            syncUItoState();
             const q = questions[qi];
             if(q.c.includes(ci)) q.c = q.c.filter(id => id !== ci);
             else q.c.push(ci);
             renderEditor();
         }
 
-        function addCtx() { contexts.push({id:'c'+Date.now(), l:'New Tab', i:'🏷️'}); renderEditor(); }
-        function delCtx(i) { showModal("Confirm", "Remove this context tab?", () => { contexts.splice(i, 1); renderEditor(); }); }
-        function addQ() { questions.push({id:'q'+Date.now(), c:[], l:'New Question?', t:'toggle', d:false, o:''}); renderEditor(); }
+        function addCtx() { syncUItoState(); contexts.push({id:'c'+Date.now(), l:'New Tab', i:'🏷️'}); renderEditor(); }
+        function delCtx(i) { showModal("Confirm", "Remove this tab?", () => { contexts.splice(i, 1); renderEditor(); }); }
+        function addQ() { syncUItoState(); questions.push({id:'q'+Date.now(), c:[], l:'New Question?', t:'toggle', d:false, o:''}); renderEditor(); }
         function delQ(i) { showModal("Confirm", "Remove this prompt?", () => { questions.splice(i, 1); renderEditor(); }); }
 
         function saveConfig() {
-            // Read UI values back into state
-            contexts.forEach((c, i) => { 
-                c.i = document.getElementById('ci-'+i).value; 
-                c.l = document.getElementById('cl-'+i).value; 
-            });
-            questions.forEach((q, i) => { 
-                q.l = document.getElementById('ql-'+i).value; 
-                q.t = document.getElementById('qt-'+i).value; 
-                const optEl = document.getElementById('qo-'+i);
-                if(optEl) q.o = optEl.value;
-            });
+            syncUItoState();
             localStorage.setItem('skel_ctx_v7', JSON.stringify(contexts));
             localStorage.setItem('skel_q_v7', JSON.stringify(questions));
             location.reload();
         }
-
-        // --- CALENDAR & HISTORY ---
 
         function renderCal() {
             const cont = document.getElementById('calContainer'); cont.innerHTML = '';
@@ -489,49 +426,30 @@
             const logs = history[date] || [];
             const detail = document.getElementById('dayDetail');
             if(!logs.length) return detail.innerHTML = `<p style="text-align:center; color:var(--sub); font-size:13px; margin-top:30px;">No logs for ${date}</p>`;
-            
             detail.innerHTML = logs.map((l, index) => {
                 const c = contexts.find(ctx => ctx.id === l.ctx);
-                return `
-                <div class="history-card">
-                    <button onclick="delLog('${date}', ${index})" style="position:absolute; top:12px; right:12px; color:var(--err); background:none; font-size:10px;">✕</button>
-                    <div style="font-size:10px; color:var(--p); font-weight:900; margin-bottom:8px;">${(c ? c.l : l.ctx).toUpperCase()} — ${l.time}</div>
-                    <div style="border-top:1px solid var(--border); padding-top:10px;">
-                        ${Object.entries(l.ans).map(([qid, val]) => {
+                return `<div class="history-card"><button onclick="delLog('${date}', ${index})" style="position:absolute; top:12px; right:12px; color:var(--err); background:none; font-size:10px;">✕</button><div style="font-size:10px; color:var(--p); font-weight:900; margin-bottom:8px;">${(c ? c.l : l.ctx).toUpperCase()} — ${l.time}</div><div style="border-top:1px solid var(--border); padding-top:10px;">${Object.entries(l.ans).map(([qid, val]) => {
                             const q = questions.find(qu => qu.id === qid);
                             const display = Array.isArray(val) ? val.join(', ') : (q && q.t === 'toggle' ? (val ? 'Yes' : 'No') : val);
                             return q ? `<div style="font-size:12px; margin-bottom:8px;"><b style="color:var(--sub); font-size:9px; text-transform:uppercase;">${q.l}</b><br>${display}</div>` : '';
-                        }).join('')}
-                    </div>
-                </div>`;
+                        }).join('')}</div></div>`;
             }).join('');
         }
 
-        function delLog(date, idx) {
-            showModal("Delete Entry", "Remove this record?", () => {
-                history[date].splice(idx, 1); 
-                localStorage.setItem('skel_h_v7', JSON.stringify(history)); 
-                viewDay(date); 
-                renderCal();
-            });
-        }
+        function delLog(date, idx) { showModal("Delete Entry", "Remove this record?", () => { history[date].splice(idx, 1); localStorage.setItem('skel_h_v7', JSON.stringify(history)); viewDay(date); renderCal(); }); }
 
         function renderHistoryList() {
             const term = document.getElementById('historySearch').value.toLowerCase();
             if(!term) { renderCal(); return; }
-            
             const detail = document.getElementById('dayDetail');
-            detail.innerHTML = '<b style="font-size:11px; color:var(--sub);">SEARCH RESULTS:</b><br>';
-            
-            let found = false;
+            detail.innerHTML = ''; let found = false;
             Object.keys(history).reverse().forEach(date => {
                 history[date].forEach((l, i) => {
                     const ctxName = (contexts.find(c => c.id === l.ctx)?.l || "").toLowerCase();
                     const answersStr = JSON.stringify(l.ans).toLowerCase();
                     if(ctxName.includes(term) || answersStr.includes(term) || date.includes(term)) {
                         found = true;
-                        detail.innerHTML += `<div style="font-size:9px; font-weight:900; color:var(--p); margin-top:10px;">${date}</div>`;
-                        detail.innerHTML += viewDayEntrySingle(date, l, i);
+                        detail.innerHTML += `<div style="font-size:9px; font-weight:900; color:var(--p); margin:10px 0;">${date}</div>` + viewDayEntrySingle(date, l, i);
                     }
                 });
             });
@@ -540,17 +458,10 @@
 
         function viewDayEntrySingle(date, l, index) {
             const c = contexts.find(ctx => ctx.id === l.ctx);
-            return `
-            <div class="history-card">
-                <button onclick="delLog('${date}', ${index})" style="position:absolute; top:12px; right:12px; color:var(--err); background:none; font-size:10px;">✕</button>
-                <div style="font-size:10px; font-weight:900; margin-bottom:5px;">${(c ? c.l : l.ctx).toUpperCase()} @ ${l.time}</div>
-                <div>
-                    ${Object.entries(l.ans).map(([qid, val]) => {
-                        const q = questions.find(qu => qu.id === qid);
-                        return q ? `<div style="font-size:12px;"><b style="color:var(--sub); font-size:9px;">${q.l}:</b> ${Array.isArray(val) ? val.join(', ') : val}</div>` : '';
-                    }).join('')}
-                </div>
-            </div>`;
+            return `<div class="history-card"><button onclick="delLog('${date}', ${index})" style="position:absolute; top:12px; right:12px; color:var(--err); background:none; font-size:10px;">✕</button><div style="font-size:10px; font-weight:900; margin-bottom:5px;">${(c ? c.l : l.ctx).toUpperCase()} @ ${l.time}</div><div>${Object.entries(l.ans).map(([qid, val]) => {
+                const q = questions.find(qu => qu.id === qid);
+                return q ? `<div style="font-size:12px;"><b style="color:var(--sub); font-size:9px;">${q.l}:</b> ${Array.isArray(val) ? val.join(', ') : val}</div>` : '';
+            }).join('')}</div></div>`;
         }
 
         function dlDay(date) {
@@ -558,7 +469,7 @@
             let txt = `SKELETON LOG — ${date}\n========================\n\n`;
             logs.forEach(l => {
                 const c = contexts.find(ctx => ctx.id === l.ctx);
-                txt += `[${l.time}] ${ (c ? c.l : l.ctx).toUpperCase() }\n`;
+                txt += `[${l.time}] ${(c ? c.l : l.ctx).toUpperCase()}\n`;
                 Object.entries(l.ans).forEach(([qid, val]) => {
                     const q = questions.find(qu => qu.id === qid);
                     if(q) txt += ` - ${q.l}: ${Array.isArray(val) ? val.join(', ') : val}\n`;
@@ -574,14 +485,8 @@
             document.getElementById('modalTitle').innerText = title;
             document.getElementById('modalBody').innerText = body;
             modal.classList.remove('hidden');
-            
-            document.getElementById('modalConfirm').onclick = () => {
-                modal.classList.add('hidden');
-                if(onConfirm) onConfirm();
-            };
-            document.getElementById('modalCancel').onclick = () => {
-                modal.classList.add('hidden');
-            };
+            document.getElementById('modalConfirm').onclick = () => { modal.classList.add('hidden'); if(onConfirm) onConfirm(); };
+            document.getElementById('modalCancel').onclick = () => modal.classList.add('hidden');
         }
 
         window.onload = init;
