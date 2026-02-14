@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>skeleton log · orderable</title>
+    <title>skeleton log · context order</title>
     <style>
         * {
             margin: 0;
@@ -21,11 +21,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-        }
-
-        .dark-mode {
-            background: #000;
-            color: #f5f5f7;
         }
 
         .wrap {
@@ -58,11 +53,6 @@
             transition: 0.2s;
         }
 
-        .dark-mode .icon-btn {
-            background: #2c2c2e;
-            color: #fff;
-        }
-
         .icon-btn:active {
             transform: scale(0.95);
         }
@@ -91,23 +81,13 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
             cursor: pointer;
             position: relative;
-        }
-
-        .dark-mode .chip {
-            background: #1c1c1e;
-            border-color: #3a3a3c;
         }
 
         .chip.active {
             border-color: #007aff;
             background: #f0f7ff;
-        }
-
-        .dark-mode .chip.active {
-            background: #1c2a3a;
         }
 
         .chip.completed::after {
@@ -163,11 +143,6 @@
             margin-bottom: 16px;
         }
 
-        .dark-mode .card {
-            background: #1c1c1e;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-
         /* welcome */
         .welcome {
             text-align: center;
@@ -192,10 +167,6 @@
             line-height: 1.5;
         }
 
-        .dark-mode .welcome-desc {
-            color: #98989e;
-        }
-
         .context-grid {
             display: flex;
             flex-direction: column;
@@ -217,11 +188,6 @@
             width: 100%;
         }
 
-        .dark-mode .ctx-btn {
-            background: #2c2c2e;
-            color: #fff;
-        }
-
         .ctx-btn:active {
             opacity: 0.7;
         }
@@ -230,10 +196,6 @@
             margin-left: auto;
             font-size: 13px;
             color: #86868b;
-        }
-
-        .dark-mode .ctx-btn small {
-            color: #98989e;
         }
 
         .ctx-btn:disabled {
@@ -248,10 +210,6 @@
             margin-bottom: 20px;
             padding-bottom: 12px;
             border-bottom: 1px solid #e8e8ed;
-        }
-
-        .dark-mode .logger-header {
-            border-color: #3a3a3c;
         }
 
         .logger-context {
@@ -312,11 +270,6 @@
             outline: none;
         }
 
-        .dark-mode input, .dark-mode textarea, .dark-mode select {
-            background: #2c2c2e;
-            color: #fff;
-        }
-
         input[type="time"] {
             text-align: center;
             font-size: 22px;
@@ -345,17 +298,9 @@
             border: 2px solid transparent;
         }
 
-        .dark-mode .option-pill {
-            background: #2c2c2e;
-        }
-
         .option-pill.active {
             border-color: #007aff;
             background: #f0f7ff;
-        }
-
-        .dark-mode .option-pill.active {
-            background: #1c2a3a;
         }
 
         .switch {
@@ -422,11 +367,6 @@
             cursor: pointer;
         }
 
-        .dark-mode .button-row button {
-            background: #2c2c2e;
-            color: #fff;
-        }
-
         .button-row button:active {
             opacity: 0.7;
         }
@@ -484,10 +424,6 @@
             position: relative;
         }
 
-        .dark-mode .cal-day {
-            background: #2c2c2e;
-        }
-
         .cal-day.today {
             border: 2px solid #007aff;
         }
@@ -515,10 +451,6 @@
             border-radius: 18px;
             margin-bottom: 12px;
             position: relative;
-        }
-
-        .dark-mode .history-entry {
-            background: #2c2c2e;
         }
 
         .entry-header {
@@ -582,7 +514,7 @@
             font-weight: 500;
         }
 
-        /* collapsible sections */
+        /* settings */
         .section-header {
             display: flex;
             justify-content: space-between;
@@ -591,10 +523,6 @@
             cursor: pointer;
             border-bottom: 1px solid #e8e8ed;
             margin-top: 16px;
-        }
-
-        .dark-mode .section-header {
-            border-color: #3a3a3c;
         }
 
         .section-header:first-of-type {
@@ -626,15 +554,11 @@
             max-height: 0;
         }
 
-        .reorder-handle {
-            cursor: grab;
-            padding: 8px;
-            font-size: 18px;
-            color: #86868b;
-        }
-
-        .reorder-handle:active {
-            cursor: grabbing;
+        .context-item {
+            background: #f5f5f7;
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 12px;
         }
 
         .question-item {
@@ -642,43 +566,35 @@
             padding: 16px;
             border-radius: 16px;
             margin-bottom: 12px;
-            position: relative;
         }
 
-        .question-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
-        .question-header input {
-            flex: 1;
+        .context-selector {
+            width: 100%;
             padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #d2d2d7;
+            margin: 8px 0;
+            background: white;
         }
 
-        .repeat-badge {
-            background: #007aff20;
-            color: #007aff;
-            font-size: 11px;
-            padding: 4px 8px;
-            border-radius: 30px;
-            font-weight: 600;
-        }
-
-        .context-tag {
-            background: #e8e8ed;
-            padding: 6px 12px;
-            border-radius: 30px;
-            font-size: 12px;
-            display: inline-block;
-            margin: 4px;
-            cursor: pointer;
-        }
-
-        .context-tag.active {
+        .order-number {
             background: #007aff;
             color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .reorder-controls {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
         }
 
         /* modal */
@@ -711,10 +627,6 @@
             width: 100%;
             max-width: 360px;
             text-align: center;
-        }
-
-        .dark-mode .modal-card {
-            background: #1c1c1e;
         }
 
         .modal-buttons {
@@ -757,7 +669,7 @@
         <div class="chip-scroll" id="chipContainer"></div>
 
         <!-- main card -->
-        <div class="card" id="mainCard">
+        <div class="card">
             <!-- welcome view -->
             <div id="welcomeView">
                 <div class="welcome">
@@ -815,7 +727,7 @@
                 </div>
             </div>
 
-            <!-- setup view with collapsible sections -->
+            <!-- setup view -->
             <div id="setupView" class="hidden">
                 <div class="history-header">
                     <span class="history-title">settings</span>
@@ -846,27 +758,6 @@
                     <div id="questionEditor" style="padding: 8px 0 16px;"></div>
                 </div>
 
-                <!-- repeat settings section -->
-                <div class="section-header" onclick="toggleSection('repeat')">
-                    <span class="section-title">🔄 question order & repeat</span>
-                    <span class="section-toggle" id="repeatToggle">▼</span>
-                </div>
-                <div id="repeatSection" class="section-content">
-                    <div style="padding: 16px 0;">
-                        <div style="background:#f5f5f7; padding:16px; border-radius:16px; margin-bottom:12px;">
-                            <div style="margin-bottom:12px; font-weight:500;">drag to reorder questions</div>
-                            <div id="questionOrderList"></div>
-                            <div style="margin-top:16px;">
-                                <label style="display:flex; align-items:center; gap:8px;">
-                                    <input type="checkbox" id="allowRepeat" onchange="updateRepeatSetting()">
-                                    <span>allow questions to repeat across contexts</span>
-                                </label>
-                                <small style="color:#86868b; display:block; margin-top:8px;">when enabled, questions can appear in multiple contexts</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <button class="download-btn" style="margin-top:8px;" onclick="saveConfig()">save all</button>
             </div>
 
@@ -880,7 +771,7 @@
             </div>
         </div>
 
-        <footer>v1.6.0 · orderable</footer>
+        <footer>v1.7.0 · context order</footer>
     </div>
 
     <!-- modal -->
@@ -898,31 +789,32 @@
     <script>
         // ---------- STORAGE ----------
         const STORAGE = {
-            CONTEXTS: 'sk_ctx_v2',
-            QUESTIONS: 'sk_q_v2',
-            HISTORY: 'sk_h_v2',
-            PROGRESS: 'sk_p_v2',
-            SETTINGS: 'sk_settings_v2'
+            CONTEXTS: 'sk_ctx_v3',
+            QUESTIONS: 'sk_q_v3',
+            HISTORY: 'sk_h_v3',
+            PROGRESS: 'sk_p_v3',
+            SETTINGS: 'sk_settings_v3'
         };
 
         // ---------- DEFAULTS ----------
         const DEFAULT_CTX = [
-            { id: 'morn', l: 'Morning', i: '🌅' },
-            { id: 'aft', l: 'Afternoon', i: '☀️' },
-            { id: 'eve', l: 'Evening', i: '🌙' }
+            { id: 'morn', l: 'Morning', i: '🌅', order: 0 },
+            { id: 'aft', l: 'Afternoon', i: '☀️', order: 1 },
+            { id: 'eve', l: 'Evening', i: '🌙', order: 2 }
         ];
 
+        // Questions now have contextId (single) and order per context
         const DEFAULT_Q = [
-            { id: 'q1', c: ['morn'], l: 'Mood?', t: 'select', o: 'good,ok,tired', d: 'ok', order: 0 },
-            { id: 'q2', c: ['morn','aft','eve'], l: 'Water (L)', t: 'range', d: '1.5', order: 1 }
+            { id: 'q1', contextId: 'morn', l: 'Mood?', t: 'select', o: 'good,ok,tired', d: 'ok', order: 0 },
+            { id: 'q2', contextId: 'morn', l: 'Water (L)', t: 'range', d: '1.5', order: 1 },
+            { id: 'q3', contextId: 'aft', l: 'Energy level', t: 'range', d: '5', order: 0 },
+            { id: 'q4', contextId: 'eve', l: 'Today summary', t: 'textarea', d: '', order: 0 }
         ];
 
         const DEFAULT_SETTINGS = {
-            allowRepeat: false,
             sections: {
                 contexts: true,
-                questions: true,
-                repeat: false
+                questions: true
             }
         };
 
@@ -938,7 +830,6 @@
         let answers = {};
         let currentView = 'welcome';
         let currentViewedDate = '';
-        let draggedItem = null;
 
         // ---------- HELPERS ----------
         function getToday() {
@@ -959,18 +850,18 @@
             });
         }
 
-        // get ordered questions for a context
-        function getOrderedQuestions(contextId) {
-            let ctxQuestions = questions.filter(q => q.c.includes(contextId));
-            
-            // sort by order property if exists
-            ctxQuestions.sort((a, b) => {
-                const orderA = a.order !== undefined ? a.order : 999;
-                const orderB = b.order !== undefined ? b.order : 999;
-                return orderA - orderB;
-            });
-            
-            return ctxQuestions;
+        // Get ordered questions for a specific context
+        function getQuestionsForContext(contextId) {
+            return questions
+                .filter(q => q.contextId === contextId)
+                .sort((a, b) => (a.order || 0) - (b.order || 0));
+        }
+
+        // Get next order number for a context
+        function getNextOrderForContext(contextId) {
+            const ctxQuestions = questions.filter(q => q.contextId === contextId);
+            if (ctxQuestions.length === 0) return 0;
+            return Math.max(...ctxQuestions.map(q => q.order || 0)) + 1;
         }
 
         // ---------- MODAL ----------
@@ -1012,7 +903,6 @@
             renderChips();
         }
 
-        // section toggling
         function toggleSection(section) {
             const content = document.getElementById(section + 'Section');
             const toggle = document.getElementById(section + 'Toggle');
@@ -1031,7 +921,9 @@
 
         function renderChips() {
             const today = getToday();
-            document.getElementById('chipContainer').innerHTML = contexts.map(ctx => {
+            const sortedContexts = [...contexts].sort((a, b) => (a.order || 0) - (b.order || 0));
+            
+            document.getElementById('chipContainer').innerHTML = sortedContexts.map(ctx => {
                 const status = getContextStatus(today, ctx.id);
                 const unanswered = getUnansweredCount(today, ctx.id);
                 const active = activeContext === ctx.id ? 'active' : '';
@@ -1051,13 +943,15 @@
         function getUnansweredCount(date, ctxId) {
             const p = progress[`${date}_${ctxId}`];
             if (!p) return 0;
-            const ctxQs = getOrderedQuestions(ctxId);
+            const ctxQs = getQuestionsForContext(ctxId);
             return Math.max(0, ctxQs.length - Object.keys(p.answers || {}).length);
         }
 
         function renderWelcomeGrid() {
             const today = getToday();
-            document.getElementById('welcomeGrid').innerHTML = contexts.map(ctx => {
+            const sortedContexts = [...contexts].sort((a, b) => (a.order || 0) - (b.order || 0));
+            
+            document.getElementById('welcomeGrid').innerHTML = sortedContexts.map(ctx => {
                 const status = getContextStatus(today, ctx.id);
                 const btnStatus = status === 'completed' ? '✓ done' : (status === 'in-progress' ? '↻ resume' : '→ start');
                 const disabled = status === 'completed' ? 'disabled' : '';
@@ -1098,7 +992,7 @@
         }
 
         function renderQuestion() {
-            const filtered = getOrderedQuestions(activeContext);
+            const filtered = getQuestionsForContext(activeContext);
             if (currentQIndex >= filtered.length) {
                 completeContext();
                 return;
@@ -1185,7 +1079,7 @@
             const inp = document.getElementById('currentInput');
             if (!inp) return;
             
-            const filtered = getOrderedQuestions(activeContext);
+            const filtered = getQuestionsForContext(activeContext);
             if (currentQIndex >= filtered.length) return;
             const q = filtered[currentQIndex];
 
@@ -1201,7 +1095,7 @@
             captureCurrent();
             saveProgress();
             
-            const filtered = getOrderedQuestions(activeContext);
+            const filtered = getQuestionsForContext(activeContext);
             if (currentQIndex < filtered.length - 1) {
                 currentQIndex++;
                 renderQuestion();
@@ -1212,7 +1106,7 @@
 
         function handleSkip() {
             saveProgress();
-            const filtered = getOrderedQuestions(activeContext);
+            const filtered = getQuestionsForContext(activeContext);
             if (currentQIndex < filtered.length - 1) {
                 currentQIndex++;
                 renderQuestion();
@@ -1339,7 +1233,6 @@
             });
             entries.innerHTML = html;
             
-            // show download button for this day
             document.getElementById('dayDownloadBtn').style.display = 'block';
         }
 
@@ -1410,7 +1303,6 @@
             let content = `SKELETON LOG · ${date}\n`;
             content += `==================\n\n`;
 
-            // group by context
             const groups = {};
             logs.forEach(log => {
                 if (!groups[log.ctx]) groups[log.ctx] = [];
@@ -1437,7 +1329,6 @@
                 content += '\n';
             });
 
-            // create download
             const blob = new Blob([content], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1457,7 +1348,7 @@
             downloadDay(getToday());
         }
 
-        // ---------- EDITOR WITH ORDERING ----------
+        // ---------- EDITOR ----------
         function renderEditor() {
             // restore section states
             Object.keys(settings.sections).forEach(section => {
@@ -1476,22 +1367,22 @@
 
             renderContextEditor();
             renderQuestionEditor();
-            renderOrderList();
-            document.getElementById('allowRepeat').checked = settings.allowRepeat;
         }
 
         function renderContextEditor() {
+            const sortedContexts = [...contexts].sort((a, b) => (a.order || 0) - (b.order || 0));
+            
             let ctxHtml = '';
-            contexts.forEach((ctx, i) => {
-                ctxHtml += `<div style="background:#f5f5f7; padding:16px; border-radius:16px; margin-bottom:12px;">
+            sortedContexts.forEach((ctx, i) => {
+                ctxHtml += `<div class="context-item">
                     <div style="display:flex; gap:10px; margin-bottom:10px;">
-                        <input value="${escapeHtml(ctx.i)}" id="ctx-icon-${i}" style="width:50px; text-align:center;">
-                        <input value="${escapeHtml(ctx.l)}" id="ctx-label-${i}" style="flex:1;">
+                        <input value="${escapeHtml(ctx.i)}" id="ctx-icon-${ctx.id}" style="width:50px; text-align:center;">
+                        <input value="${escapeHtml(ctx.l)}" id="ctx-label-${ctx.id}" style="flex:1;" placeholder="context name">
                     </div>
-                    <div style="display:flex; gap:6px;">
-                        <button class="icon-btn" style="width:36px; height:36px;" onclick="moveContext(${i}, -1)" ${i===0?'disabled':''}>↑</button>
-                        <button class="icon-btn" style="width:36px; height:36px;" onclick="moveContext(${i}, 1)" ${i===contexts.length-1?'disabled':''}>↓</button>
-                        <button class="icon-btn" style="width:36px; height:36px; background:#ff3b30; color:white;" onclick="deleteContext(${i})">✕</button>
+                    <div class="reorder-controls">
+                        <button class="icon-btn" style="width:36px; height:36px;" onclick="moveContext('${ctx.id}', -1)" ${i===0?'disabled':''}>↑</button>
+                        <button class="icon-btn" style="width:36px; height:36px;" onclick="moveContext('${ctx.id}', 1)" ${i===sortedContexts.length-1?'disabled':''}>↓</button>
+                        <button class="icon-btn" style="width:36px; height:36px; background:#ff3b30; color:white;" onclick="deleteContext('${ctx.id}')">✕</button>
                     </div>
                 </div>`;
             });
@@ -1499,191 +1390,195 @@
         }
 
         function renderQuestionEditor() {
+            // Group questions by context
+            const sortedContexts = [...contexts].sort((a, b) => (a.order || 0) - (b.order || 0));
+            
             let qHtml = '';
-            questions.forEach((q, i) => {
-                qHtml += `<div class="question-item" draggable="true" ondragstart="dragStart(event, ${i})" ondragover="dragOver(event)" ondrop="dropQuestion(event, ${i})">
-                    <div class="question-header">
-                        <span class="reorder-handle" draggable="false">⋮⋮</span>
-                        <input value="${escapeHtml(q.l)}" id="q-label-${i}" placeholder="question">
-                        ${q.c.length > 1 ? '<span class="repeat-badge">↻ repeat</span>' : ''}
-                    </div>
-                    <div style="margin-bottom:10px;">
-                        <small>appears in:</small><br>
-                        ${contexts.map(ctx => 
-                            `<span class="context-tag ${q.c.includes(ctx.id) ? 'active' : ''}" 
-                                   onclick="toggleQuestionCtx(${i}, '${ctx.id}')">${ctx.i} ${ctx.l}</span>`
-                        ).join('')}
-                    </div>
-                    <select id="q-type-${i}" style="width:100%; margin-bottom:10px;" onchange="document.getElementById('q-options-${i}').style.display = this.value==='select'||this.value==='multi'?'block':'none'">
-                        <option value="text" ${q.t==='text'?'selected':''}>text</option>
-                        <option value="textarea" ${q.t==='textarea'?'selected':''}>long text</option>
-                        <option value="time" ${q.t==='time'?'selected':''}>time</option>
-                        <option value="range" ${q.t==='range'?'selected':''}>range</option>
-                        <option value="toggle" ${q.t==='toggle'?'selected':''}>yes/no</option>
-                        <option value="select" ${q.t==='select'?'selected':''}>pick one</option>
-                        <option value="multi" ${q.t==='multi'?'selected':''}>pick many</option>
-                    </select>
-                    <input type="text" id="q-options-${i}" placeholder="options (comma)" value="${escapeHtml(q.o || '')}" style="width:100%; ${q.t!=='select' && q.t!=='multi' ? 'display:none;' : ''}">
-                    <div style="display:flex; gap:6px; margin-top:10px;">
-                        <button class="icon-btn" style="width:36px; height:36px;" onclick="moveQuestion(${i}, -1)" ${i===0?'disabled':''}>↑</button>
-                        <button class="icon-btn" style="width:36px; height:36px;" onclick="moveQuestion(${i}, 1)" ${i===questions.length-1?'disabled':''}>↓</button>
-                        <button class="icon-btn" style="width:36px; height:36px; background:#ff3b30; color:white;" onclick="deleteQuestion(${i})">✕</button>
-                    </div>
-                </div>`;
+            
+            sortedContexts.forEach(ctx => {
+                const ctxQuestions = questions
+                    .filter(q => q.contextId === ctx.id)
+                    .sort((a, b) => (a.order || 0) - (b.order || 0));
+                
+                if (ctxQuestions.length > 0) {
+                    qHtml += `<div style="margin:16px 0 8px;"><strong>${ctx.i} ${ctx.l}</strong></div>`;
+                    
+                    ctxQuestions.forEach((q, idx) => {
+                        qHtml += `<div class="question-item" id="question-${q.id}">
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                                <span class="order-number">${idx + 1}</span>
+                                <input value="${escapeHtml(q.l)}" id="q-label-${q.id}" placeholder="question" style="flex:1;">
+                            </div>
+                            
+                            <select id="q-type-${q.id}" style="width:100%; margin-bottom:10px;" onchange="document.getElementById('q-options-${q.id}').style.display = this.value==='select'||this.value==='multi'?'block':'none'">
+                                <option value="text" ${q.t==='text'?'selected':''}>text</option>
+                                <option value="textarea" ${q.t==='textarea'?'selected':''}>long text</option>
+                                <option value="time" ${q.t==='time'?'selected':''}>time</option>
+                                <option value="range" ${q.t==='range'?'selected':''}>range</option>
+                                <option value="toggle" ${q.t==='toggle'?'selected':''}>yes/no</option>
+                                <option value="select" ${q.t==='select'?'selected':''}>pick one</option>
+                                <option value="multi" ${q.t==='multi'?'selected':''}>pick many</option>
+                            </select>
+                            
+                            <input type="text" id="q-options-${q.id}" placeholder="options (comma separated)" 
+                                   value="${escapeHtml(q.o || '')}" 
+                                   style="width:100%; ${q.t!=='select' && q.t!=='multi' ? 'display:none;' : ''}">
+                            
+                            <div class="reorder-controls" style="margin-top:12px;">
+                                <button class="icon-btn" style="width:36px; height:36px;" onclick="moveQuestion('${q.id}', -1)" ${idx===0?'disabled':''}>↑</button>
+                                <button class="icon-btn" style="width:36px; height:36px;" onclick="moveQuestion('${q.id}', 1)" ${idx===ctxQuestions.length-1?'disabled':''}>↓</button>
+                                <button class="icon-btn" style="width:36px; height:36px; background:#ff3b30; color:white;" onclick="deleteQuestion('${q.id}')">✕</button>
+                            </div>
+                        </div>`;
+                    });
+                }
             });
+            
+            // Add "new question" dropdown at the bottom
+            qHtml += `<div class="question-item" style="margin-top:16px;">
+                <div style="margin-bottom:12px; font-weight:500;">add new question to:</div>
+                <select id="newQuestionContext" class="context-selector">
+                    ${sortedContexts.map(ctx => `<option value="${ctx.id}">${ctx.i} ${ctx.l}</option>`).join('')}
+                </select>
+                <button class="download-btn" style="margin:8px 0 0;" onclick="addQuestionToContext()">+ add question</button>
+            </div>`;
+            
             document.getElementById('questionEditor').innerHTML = qHtml;
         }
 
-        function renderOrderList() {
-            let html = '<div style="background:#f5f5f7; border-radius:16px; padding:8px;">';
-            questions.forEach((q, i) => {
-                html += `<div draggable="true" ondragstart="dragStart(event, ${i})" ondragover="dragOver(event)" ondrop="dropOrder(event, ${i})" 
-                        style="display:flex; align-items:center; gap:10px; padding:12px; margin:4px; background:white; border-radius:12px; cursor:move;">
-                    <span class="reorder-handle">⋮⋮</span>
-                    <span>${q.l.substring(0,30)}${q.l.length > 30 ? '…' : ''}</span>
-                    ${q.c.length > 1 ? '<span class="repeat-badge">↻</span>' : ''}
-                </div>`;
-            });
-            html += '</div>';
-            document.getElementById('questionOrderList').innerHTML = html;
-        }
-
-        // drag and drop ordering
-        function dragStart(event, index) {
-            draggedItem = index;
-            event.dataTransfer.setData('text/plain', index);
-        }
-
-        function dragOver(event) {
-            event.preventDefault();
-        }
-
-        function dropQuestion(event, targetIndex) {
-            event.preventDefault();
-            if (draggedItem === null) return;
-            
-            const newQuestions = [...questions];
-            const [moved] = newQuestions.splice(draggedItem, 1);
-            newQuestions.splice(targetIndex, 0, moved);
-            
-            // update order property
-            newQuestions.forEach((q, idx) => {
-                q.order = idx;
-            });
-            
-            questions = newQuestions;
-            draggedItem = null;
-            renderEditor();
-        }
-
-        function dropOrder(event, targetIndex) {
-            dropQuestion(event, targetIndex);
-        }
-
         function syncFromEditor() {
-            contexts.forEach((_, i) => {
-                const icon = document.getElementById(`ctx-icon-${i}`);
-                const label = document.getElementById(`ctx-label-${i}`);
-                if (icon) contexts[i].i = icon.value;
-                if (label) contexts[i].l = label.value;
+            // sync contexts
+            contexts.forEach(ctx => {
+                const icon = document.getElementById(`ctx-icon-${ctx.id}`);
+                const label = document.getElementById(`ctx-label-${ctx.id}`);
+                if (icon) ctx.i = icon.value;
+                if (label) ctx.l = label.value;
             });
             
-            questions.forEach((_, i) => {
-                const label = document.getElementById(`q-label-${i}`);
-                const type = document.getElementById(`q-type-${i}`);
-                const opts = document.getElementById(`q-options-${i}`);
-                if (label) questions[i].l = label.value;
-                if (type) questions[i].t = type.value;
-                if (opts) questions[i].o = opts.value;
+            // sync questions
+            questions.forEach(q => {
+                const label = document.getElementById(`q-label-${q.id}`);
+                const type = document.getElementById(`q-type-${q.id}`);
+                const opts = document.getElementById(`q-options-${q.id}`);
+                if (label) q.l = label.value;
+                if (type) q.t = type.value;
+                if (opts) q.o = opts.value;
             });
         }
 
-        function updateRepeatSetting() {
-            settings.allowRepeat = document.getElementById('allowRepeat').checked;
-            localStorage.setItem(STORAGE.SETTINGS, JSON.stringify(settings));
-        }
-
-        function moveContext(idx, dir) {
+        function moveContext(ctxId, direction) {
             syncFromEditor();
-            const target = idx + dir;
+            
+            const index = contexts.findIndex(c => c.id === ctxId);
+            const target = index + direction;
             if (target < 0 || target >= contexts.length) return;
-            [contexts[idx], contexts[target]] = [contexts[target], contexts[idx]];
+            
+            // Swap orders
+            const tempOrder = contexts[index].order;
+            contexts[index].order = contexts[target].order;
+            contexts[target].order = tempOrder;
+            
+            // Re-sort
+            contexts.sort((a, b) => (a.order || 0) - (b.order || 0));
+            
             renderEditor();
             renderChips();
+            renderWelcomeGrid();
         }
 
-        function moveQuestion(idx, dir) {
+        function moveQuestion(qId, direction) {
             syncFromEditor();
-            const target = idx + dir;
-            if (target < 0 || target >= questions.length) return;
-            [questions[idx], questions[target]] = [questions[target], questions[idx]];
             
-            // update order property
-            questions.forEach((q, i) => {
-                q.order = i;
-            });
+            const q = questions.find(q => q.id === qId);
+            if (!q) return;
             
-            renderEditor();
-        }
-
-        function toggleQuestionCtx(qIdx, ctxId) {
-            syncFromEditor();
-            const q = questions[qIdx];
+            const ctxQuestions = questions
+                .filter(qq => qq.contextId === q.contextId)
+                .sort((a, b) => (a.order || 0) - (b.order || 0));
             
-            if (!settings.allowRepeat) {
-                // if repeat not allowed, remove from other contexts first
-                q.c = [ctxId];
-            } else {
-                if (q.c.includes(ctxId)) {
-                    q.c = q.c.filter(id => id !== ctxId);
-                } else {
-                    q.c.push(ctxId);
-                }
-            }
+            const index = ctxQuestions.findIndex(qq => qq.id === qId);
+            const target = index + direction;
+            if (target < 0 || target >= ctxQuestions.length) return;
+            
+            // Swap orders within the same context
+            const targetQ = ctxQuestions[target];
+            const tempOrder = q.order;
+            q.order = targetQ.order;
+            targetQ.order = tempOrder;
+            
             renderEditor();
         }
 
         function addContext() {
             syncFromEditor();
-            contexts.push({ id: 'ctx_'+Date.now(), l: 'new', i: '📌' });
-            renderEditor();
-            renderChips();
-        }
-
-        function deleteContext(idx) {
-            modal.show('Delete', `Remove "${contexts[idx].l}"?`, () => {
-                const ctxId = contexts[idx].id;
-                contexts.splice(idx, 1);
-                questions.forEach(q => {
-                    q.c = q.c.filter(id => id !== ctxId);
-                });
-                renderEditor();
-                renderChips();
-            });
-        }
-
-        function addQuestion() {
-            syncFromEditor();
-            const newOrder = questions.length;
-            questions.push({ 
-                id: 'q_'+Date.now(), 
-                c: contexts.length > 0 ? [contexts[0].id] : [], 
-                l: 'new question?', 
-                t: 'text', 
-                o: '', 
-                d: '',
+            
+            const newOrder = contexts.length;
+            const newId = 'ctx_' + Date.now();
+            contexts.push({ 
+                id: newId, 
+                l: 'new context', 
+                i: '📌',
                 order: newOrder 
             });
+            
+            renderEditor();
+            renderChips();
+            renderWelcomeGrid();
+        }
+
+        function deleteContext(ctxId) {
+            const ctx = contexts.find(c => c.id === ctxId);
+            modal.show('Delete', `Remove "${ctx.l}" and all its questions?`, () => {
+                // Remove context
+                contexts = contexts.filter(c => c.id !== ctxId);
+                
+                // Remove all questions for this context
+                questions = questions.filter(q => q.contextId !== ctxId);
+                
+                // Reorder remaining contexts
+                contexts.forEach((c, idx) => {
+                    c.order = idx;
+                });
+                
+                renderEditor();
+                renderChips();
+                renderWelcomeGrid();
+                
+                if (activeContext === ctxId) {
+                    activeContext = '';
+                    showView('welcome');
+                }
+            });
+        }
+
+        function addQuestionToContext() {
+            syncFromEditor();
+            
+            const select = document.getElementById('newQuestionContext');
+            const contextId = select.value;
+            const context = contexts.find(c => c.id === contextId);
+            
+            if (!context) return;
+            
+            const nextOrder = getNextOrderForContext(contextId);
+            const newId = 'q_' + Date.now();
+            
+            questions.push({
+                id: newId,
+                contextId: contextId,
+                l: 'new question',
+                t: 'text',
+                o: '',
+                d: '',
+                order: nextOrder
+            });
+            
             renderEditor();
         }
 
-        function deleteQuestion(idx) {
+        function deleteQuestion(qId) {
             modal.show('Delete', 'Remove this question?', () => {
-                questions.splice(idx, 1);
-                // update order of remaining questions
-                questions.forEach((q, i) => {
-                    q.order = i;
-                });
+                questions = questions.filter(q => q.id !== qId);
                 renderEditor();
             });
         }
@@ -1691,13 +1586,9 @@
         function saveConfig() {
             syncFromEditor();
             
-            // ensure all questions have order
-            questions.forEach((q, i) => {
-                if (q.order === undefined) q.order = i;
-            });
-            
             localStorage.setItem(STORAGE.CONTEXTS, JSON.stringify(contexts));
             localStorage.setItem(STORAGE.QUESTIONS, JSON.stringify(questions));
+            
             modal.show('Saved', 'Settings saved', () => location.reload());
         }
 
@@ -1705,9 +1596,13 @@
         window.onload = () => {
             modal.init();
             
-            // ensure questions have order property
-            questions.forEach((q, i) => {
-                if (q.order === undefined) q.order = i;
+            // Ensure all items have order
+            contexts.forEach((ctx, idx) => {
+                if (ctx.order === undefined) ctx.order = idx;
+            });
+            
+            questions.forEach((q, idx) => {
+                if (q.order === undefined) q.order = idx;
             });
             
             renderChips();
@@ -1731,18 +1626,12 @@
         window.downloadToday = downloadToday;
         window.toggleSection = toggleSection;
         window.addContext = addContext;
-        window.addQuestion = addQuestion;
+        window.addQuestionToContext = addQuestionToContext;
         window.moveContext = moveContext;
         window.moveQuestion = moveQuestion;
-        window.toggleQuestionCtx = toggleQuestionCtx;
         window.deleteContext = deleteContext;
         window.deleteQuestion = deleteQuestion;
         window.saveConfig = saveConfig;
-        window.dragStart = dragStart;
-        window.dragOver = dragOver;
-        window.dropQuestion = dropQuestion;
-        window.dropOrder = dropOrder;
-        window.updateRepeatSetting = updateRepeatSetting;
         window.modal = modal;
     </script>
 </body>
