@@ -3,892 +3,1186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Skeleton Logger</title>
+    <title>Skeleton Logger · Context-Aware Journal</title>
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon.png">
     <style>
-        :root { 
-            --p: #6366f1; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --sub: #64748b; 
-            --err: #ef4444; --border: #e2e8f0; --accent: #f1f5f9; --success: #10b981;
-            --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
-            --shadow-lg: 0 10px 25px rgba(0,0,0,0.15);
-            --transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
+        /* ----- DESIGN TOKENS (light/dark aware) ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-light: #8183f5;
+            --primary-dark: #4f52e0;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-soft: #64748b;
+            --border: #e2e8f0;
+            --accent: #f1f5f9;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            
+            /* Elevation */
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.12);
+            
+            /* Motion */
+            --transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
         @media (prefers-color-scheme: dark) {
             :root:not(.light-mode) {
-                --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --sub: #94a3b8; 
-                --border: #334155; --accent: #0f172a;
+                --bg: #0f172a;
+                --card: #1e293b;
+                --text: #f1f5f9;
+                --text-soft: #94a3b8;
+                --border: #334155;
+                --accent: #0f172a;
             }
         }
-        
-        .dark-mode { --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --sub: #94a3b8; --border: #334155; --accent: #0f172a; }
-        .light-mode { --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --sub: #64748b; --border: #e2e8f0; --accent: #f1f5f9; }
 
-        * { 
-            box-sizing: border-box; 
-            -webkit-tap-highlight-color: transparent;
-            margin: 0;
-            padding: 0;
+        .dark-mode {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f1f5f9;
+            --text-soft: #94a3b8;
+            --border: #334155;
+            --accent: #0f172a;
         }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; 
-            background: var(--bg); 
-            color: var(--text); 
-            margin: 0; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
+
+        .light-mode {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-soft: #64748b;
+            --border: #e2e8f0;
+            --accent: #f1f5f9;
+        }
+
+        /* ----- GLOBAL STYLES ----- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             padding: env(safe-area-inset-top) 20px 20px;
-            min-height: 100vh; 
+            min-height: 100vh;
             transition: var(--transition);
             line-height: 1.5;
         }
-        
-        .wrap { 
-            width: 100%; 
-            max-width: 500px; 
+
+        .wrap {
+            width: 100%;
+            max-width: 560px;
             display: flex;
             flex-direction: column;
             gap: 24px;
         }
-        
-        header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: flex-end; 
+
+        /* ----- HEADER ----- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
             width: 100%;
-            padding-top: 8px;
         }
-        
-        h1 { 
-            font-size: 28px; 
+
+        h1 {
+            font-size: clamp(24px, 6vw, 30px);
             font-weight: 800;
             letter-spacing: -0.5px;
-            background: linear-gradient(45deg, var(--p), #8b5cf6);
+            background: linear-gradient(135deg, var(--primary), #a855f7);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            margin-bottom: 4px;
+            line-height: 1.2;
         }
-        
+
         #timeStatus {
             font-size: 12px;
-            color: var(--sub);
+            color: var(--text-soft);
             font-weight: 600;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
         }
-        
-        .chip-grid { 
-            display: flex; 
-            overflow-x: auto; 
-            gap: 12px; 
-            padding: 8px 4px 16px;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
+
+        .header-buttons {
+            display: flex;
+            gap: 8px;
         }
-        
-        .chip-grid::-webkit-scrollbar { 
-            display: none; 
-        }
-        
-        .chip { 
-            flex: 0 0 auto;
-            background: var(--card); 
-            border: 2px solid var(--border); 
-            padding: 14px 12px; 
-            border-radius: 24px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 6px; 
-            cursor: pointer; 
-            transition: var(--transition);
-            min-width: 80px;
-            text-align: center;
-            box-shadow: var(--shadow-sm);
-        }
-        
-        .chip:hover {
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
-        }
-        
-        .chip:active {
-            transform: translateY(0);
-        }
-        
-        .chip span:first-child { 
-            font-size: 24px; 
-            line-height: 1;
-        }
-        
-        .chip span:last-child { 
-            font-size: 11px; 
-            font-weight: 700; 
-            text-transform: uppercase; 
-            color: var(--sub); 
-            letter-spacing: 0.5px;
-        }
-        
-        .chip.active { 
-            border-color: var(--p); 
-            background: rgba(99, 102, 241, 0.08); 
-            transform: translateY(-3px); 
-            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.15);
-            border-width: 2.5px;
-        }
-        
-        .card { 
-            background: var(--card); 
-            border-radius: 28px; 
-            box-shadow: var(--shadow-lg); 
-            padding: 28px; 
-            min-height: 480px; 
-            display: flex; 
-            flex-direction: column; 
-            position: relative; 
-            overflow: hidden; 
+
+        .header-button {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: var(--card);
             border: 1px solid var(--border);
-            width: 100%;
-            flex: 1;
-        }
-        
-        .prog { 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            height: 6px; 
-            background: var(--border); 
-            width: 100%; 
-            border-radius: 3px 3px 0 0;
-        }
-        
-        .prog-fill { 
-            height: 100%; 
-            background: var(--p); 
-            border-radius: 3px 0 0 0;
-            transition: width 0.4s ease;
-            width: 0;
-        }
-        
-        .q-label { 
-            font-size: 24px; 
-            font-weight: 800; 
-            line-height: 1.3; 
-            margin: 24px 0 28px; 
-            color: var(--text); 
-            width: 100%; 
-            text-align: center;
-        }
-        
-        .input-area { 
-            flex-grow: 1; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            width: 100%; 
-            overflow-y: auto;
-            padding: 0 8px;
-            margin-bottom: 24px;
-        }
-        
-        input[type="time"], 
-        input[type="number"], 
-        input[type="text"], 
-        input[type="search"],
-        textarea {
-            border: none; 
-            border-bottom: 2px solid var(--border); 
-            font-size: 24px; 
-            font-weight: 800; 
-            width: 100%; 
-            text-align: center; 
-            outline: none; 
-            background: transparent; 
-            padding: 12px 8px; 
-            color: var(--text); 
-            border-radius: 0;
-            font-family: inherit;
+            box-shadow: var(--shadow-sm);
             transition: var(--transition);
-        }
-        
-        input[type="search"] { 
-            font-size: 15px; 
-            text-align: left; 
-            padding: 12px 18px; 
-            border: 1px solid var(--border); 
-            border-radius: 14px; 
-            margin-bottom: 16px; 
-            background: var(--accent); 
-            width: 100%;
-            box-shadow: var(--shadow-sm);
-        }
-        
-        input[type="search"]:focus {
-            border-color: var(--p);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-        }
-        
-        textarea {
-            min-height: 160px;
-            resize: vertical;
-            padding: 16px;
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            background: var(--accent);
-            text-align: left;
-            font-size: 16px;
-            font-weight: 400;
-            margin-top: 8px;
-        }
-        
-        .option-container { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 10px; 
-            width: 100%; 
-            padding: 8px 0; 
-            max-height: 300px;
-            overflow-y: auto;
-            padding-right: 8px;
-        }
-        
-        .opt-pill { 
-            background: var(--accent); 
-            padding: 14px 20px; 
-            border-radius: 18px; 
-            cursor: pointer; 
-            border: 2px solid transparent; 
-            font-weight: 700; 
-            width: 100%; 
-            text-align: center; 
-            transition: var(--transition); 
-            color: var(--text); 
-            font-size: 16px;
-            box-shadow: var(--shadow-sm);
-        }
-        
-        .opt-pill:hover {
-            transform: scale(1.02);
-            background: var(--bg);
-        }
-        
-        .opt-pill.active { 
-            border-color: var(--p); 
-            background: rgba(99, 102, 241, 0.12); 
-            color: var(--p); 
-            transform: scale(1.03);
-            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.15);
-        }
-        
-        .switch { 
-            position: relative; 
-            display: inline-block; 
-            width: 58px; 
-            height: 32px; 
-            flex-shrink: 0; 
-        }
-        
-        .switch input { 
-            opacity: 0; 
-            width: 0; 
-            height: 0; 
-        }
-        
-        .slider { 
-            position: absolute; 
-            cursor: pointer; 
-            top: 0; 
-            left: 0; 
-            right: 0; 
-            bottom: 0; 
-            background-color: var(--border); 
-            transition: .4s; 
-            border-radius: 34px; 
-        }
-        
-        .slider:before { 
-            position: absolute; 
-            content: ""; 
-            height: 26px; 
-            width: 26px; 
-            left: 3px; 
-            bottom: 3px; 
-            background-color: white; 
-            transition: .4s; 
-            border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        
-        input:checked + .slider { 
-            background-color: var(--p); 
-        }
-        
-        input:checked + .slider:before { 
-            transform: translateX(26px); 
-        }
-        
-        .controls { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-top: auto; 
-            gap: 12px; 
-            width: 100%; 
-            padding-top: 16px;
-            border-top: 1px solid var(--border);
-        }
-        
-        button { 
-            border-radius: 16px; 
-            font-weight: 700; 
-            cursor: pointer; 
-            transition: var(--transition); 
-            border: none; 
-            font-family: inherit;
-            padding: 14px 24px;
-            font-size: 16px;
+            font-size: 20px;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            min-height: 48px;
         }
-        
-        button:active {
-            transform: scale(0.98);
-        }
-        
-        .btn-p { 
-            background: var(--p); 
-            color: #fff; 
-            flex: 1;
-            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
-        }
-        
-        .btn-p:hover {
-            background: #5558e0;
-            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.45);
-        }
-        
-        .btn-sec { 
-            background: none; 
-            color: var(--sub); 
-            font-size: 16px; 
-            padding: 12px;
-            min-width: auto;
-            min-height: auto;
-        }
-        
-        .btn-sec:hover {
-            color: var(--text);
+
+        .header-button:hover {
             background: var(--accent);
-        }
-        
-        .btn-skip { 
-            background: var(--accent); 
-            color: var(--sub); 
-            padding: 14px 20px; 
-            font-size: 15px;
-            border: 1px solid var(--border);
-        }
-        
-        .btn-skip:hover {
-            background: var(--bg);
-            color: var(--text);
-        }
-        
-        .hidden { 
-            display: none !important; 
-        }
-        
-        .history-card, 
-        .edit-row { 
-            background: var(--accent); 
-            border: 1px solid var(--border); 
-            border-radius: 20px; 
-            padding: 18px; 
-            margin-bottom: 16px; 
-            position: relative;
-            box-shadow: var(--shadow-sm);
-        }
-        
-        .edit-row {
-            background: var(--card);
-        }
-        
-        .ctx-pill { 
-            font-size: 11px; 
-            font-weight: 700; 
-            padding: 6px 12px; 
-            border-radius: 10px; 
-            border: 1px solid var(--border); 
-            margin: 0 6px 6px 0; 
-            background: var(--card); 
-            color: var(--sub); 
-            display: inline-block; 
-            cursor: pointer; 
-            transition: var(--transition);
-            user-select: none;
-        }
-        
-        .ctx-pill:hover {
-            background: var(--bg);
-            transform: scale(1.05);
-        }
-        
-        .ctx-pill.on { 
-            background: var(--p); 
-            color: white; 
-            border-color: var(--p); 
-            transform: scale(1.05);
-            box-shadow: 0 2px 6px rgba(99, 102, 241, 0.25);
-        }
-        
-        .scroll { 
-            max-height: 420px; 
-            overflow-y: auto; 
-            padding-right: 8px; 
-            -webkit-overflow-scrolling: touch;
-            width: 100%;
-        }
-        
-        .cal { 
-            display: grid; 
-            grid-template-columns: repeat(7, 1fr); 
-            gap: 8px; 
-            margin-bottom: 24px;
-            padding: 8px;
-        }
-        
-        .cal-d { 
-            aspect-ratio: 1; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 14px; 
-            background: var(--card); 
-            border: 1px solid var(--border); 
-            border-radius: 12px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            transition: var(--transition);
-            position: relative;
-            box-shadow: var(--shadow-sm);
-        }
-        
-        .cal-d:hover {
-            transform: scale(1.08);
-            z-index: 10;
+            transform: translateY(-2px);
             box-shadow: var(--shadow-md);
         }
-        
-        .cal-d.has { 
-            background: rgba(99, 102, 241, 0.12); 
-            color: var(--p); 
-            font-weight: 800; 
-            border-color: var(--p); 
-            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+
+        .header-button:active {
+            transform: translateY(0);
         }
-        
-        .cal-d.today { 
-            border: 2px solid #fbbf24; 
-            box-shadow: 0 0 0 2px #fbbf2433;
-            font-weight: 800;
-            color: #fbbf24;
+
+        /* ----- CONTEXT CHIP GRID (tabs) ----- */
+        .chip-grid {
+            display: flex;
+            gap: 12px;
+            padding: 8px 4px 20px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            position: relative;
         }
-        
-        .order-btn { 
-            background: var(--card); 
-            border: 1px solid var(--border); 
-            border-radius: 10px; 
-            padding: 8px 14px; 
-            font-size: 13px; 
-            color: var(--sub); 
-            font-weight: 700; 
+
+        .chip-grid::-webkit-scrollbar {
+            display: none;
+        }
+
+        .chip-grid::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 40px;
+            background: linear-gradient(to right, transparent, var(--bg) 80%);
+            pointer-events: none;
+        }
+
+        .chip {
+            flex: 0 0 auto;
+            min-width: 88px;
+            background: var(--card);
+            border: 2px solid var(--border);
+            padding: 12px 8px;
+            border-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
             cursor: pointer;
             transition: var(--transition);
-            min-width: 36px;
+            box-shadow: var(--shadow-sm);
+            position: relative;
         }
-        
-        .order-btn:hover {
-            background: var(--bg);
-            transform: scale(1.1);
+
+        .chip:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary);
         }
-        
-        .order-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
+
+        .chip:active {
+            transform: translateY(-1px);
         }
-        
-        footer { 
-            margin-top: 8px; 
-            color: var(--sub); 
-            font-size: 11px; 
-            font-weight: 700; 
-            text-transform: uppercase; 
-            letter-spacing: 1.2px; 
-            opacity: 0.85; 
-            text-align: center; 
-            padding: 16px;
+
+        .chip.active {
+            border-color: var(--primary);
+            background: color-mix(in srgb, var(--primary) 8%, var(--card));
+            box-shadow: 0 8px 20px color-mix(in srgb, var(--primary) 20%, transparent);
+        }
+
+        .chip.completed::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px color-mix(in srgb, var(--success) 20%, transparent);
+        }
+
+        .chip.in-progress::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--warning);
+            box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px color-mix(in srgb, var(--warning) 20%, transparent);
+        }
+
+        .chip span:first-child {
+            font-size: 26px;
+            line-height: 1;
+        }
+
+        .chip span:last-child {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-soft);
+            letter-spacing: 0.4px;
+        }
+
+        .progress-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: var(--primary);
+            color: white;
+            font-size: 11px;
+            font-weight: 800;
+            min-width: 22px;
+            height: 22px;
+            border-radius: 22px;
+            padding: 0 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
+            z-index: 5;
+        }
+
+        /* ----- MAIN CARD (glassmorphic) ----- */
+        .card {
+            background: var(--card);
+            border-radius: 32px;
+            box-shadow: var(--shadow-lg);
+            padding: 28px;
+            min-height: 520px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(8px);
             width: 100%;
         }
-        
-        #customModal { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            right: 0; 
-            bottom: 0; 
-            background: rgba(0,0,0,0.6); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 1000; 
-            padding: 20px; 
-            backdrop-filter: blur(4px);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
+
+        .prog {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 6px;
+            background: var(--border);
+            width: 100%;
+            border-radius: 32px 32px 0 0;
+            overflow: hidden;
         }
-        
-        #customModal.active {
-            opacity: 1;
-            pointer-events: all;
+
+        .prog-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+            border-radius: 32px 0 0 0;
+            transition: width 0.5s ease;
+            width: 0%;
         }
-        
-        .modal-card { 
-            background: var(--card); 
-            border-radius: 28px; 
-            padding: 32px; 
-            width: 100%; 
-            max-width: 420px; 
-            text-align: center; 
-            box-shadow: var(--shadow-lg);
-            transform: translateY(20px);
-            opacity: 0;
-            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+
+        /* ----- CONTEXT HEADER INSIDE LOGGER ----- */
+        .context-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
         }
-        
-        #customModal.active .modal-card {
-            transform: translateY(0);
-            opacity: 1;
-        }
-        
-        #modalTitle {
-            font-size: 22px;
+
+        .context-title {
+            font-size: 20px;
             font-weight: 800;
-            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .context-status {
+            font-size: 12px;
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-in-progress {
+            background: color-mix(in srgb, var(--warning) 15%, transparent);
+            color: var(--warning);
+        }
+
+        .status-completed {
+            background: color-mix(in srgb, var(--success) 15%, transparent);
+            color: var(--success);
+        }
+
+        /* ----- QUESTION & INPUT AREA ----- */
+        .q-label {
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.4;
+            margin: 24px 0 28px;
             color: var(--text);
+            text-align: center;
+            padding: 0 8px;
         }
-        
-        #modalBody {
-            color: var(--sub); 
-            font-size: 15px; 
-            line-height: 1.6;
-            margin-bottom: 24px;
-        }
-        
-        .modal-buttons {
-            display: flex; 
-            gap: 16px; 
-            justify-content: center;
-        }
-        
-        .welcome-content {
-            text-align: center; 
-            padding: 60px 20px;
+
+        .input-area {
+            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            width: 100%;
+            min-height: 160px;
+            margin-bottom: 24px;
+        }
+
+        /* Inputs */
+        input, textarea, select {
+            font-family: inherit;
+            background: transparent;
+            color: var(--text);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 14px 20px;
+            font-size: 16px;
+            width: 100%;
+            transition: var(--transition);
+            outline: none;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 15%, transparent);
+        }
+
+        textarea {
+            min-height: 140px;
+            resize: vertical;
+        }
+
+        input[type="time"] {
+            text-align: center;
+            font-size: 28px;
+            padding: 16px;
+            width: auto;
+            min-width: 200px;
+        }
+
+        /* Option pills */
+        .option-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-height: 320px;
+            overflow-y: auto;
+            padding: 4px;
+        }
+
+        .opt-pill {
+            background: var(--accent);
+            padding: 16px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            font-weight: 600;
+            width: 100%;
+            text-align: center;
+            transition: var(--transition);
+            color: var(--text);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .opt-pill:hover {
+            transform: scale(1.02);
+            background: color-mix(in srgb, var(--accent) 90%, black);
+        }
+
+        .opt-pill.active {
+            border-color: var(--primary);
+            background: color-mix(in srgb, var(--primary) 10%, var(--accent));
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        /* Range slider */
+        .range-container {
+            width: 100%;
+            text-align: center;
+        }
+
+        .range-value {
+            font-size: 56px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            background: transparent;
+            padding: 0;
+            border: none;
+        }
+
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            background: var(--border);
+            border-radius: 8px;
+            border: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            height: 32px;
+            width: 32px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -12px;
+            box-shadow: var(--shadow-md);
+            border: 3px solid white;
+            transition: var(--transition);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        /* Toggle switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 64px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border);
+            transition: .3s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 28px;
+            width: 28px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+            box-shadow: var(--shadow-sm);
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+
+        /* ----- BUTTONS & CONTROLS ----- */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            margin-top: auto;
+        }
+
+        button {
+            border-radius: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            font-family: inherit;
+            padding: 14px 22px;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .btn-p {
+            background: var(--primary);
+            color: white;
+            border: none;
+            flex: 1;
+            box-shadow: 0 8px 20px color-mix(in srgb, var(--primary) 30%, transparent);
+        }
+
+        .btn-p:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px color-mix(in srgb, var(--primary) 40%, transparent);
+        }
+
+        .btn-sec {
+            background: var(--card);
+            color: var(--text-soft);
+        }
+
+        .btn-sec:hover {
+            background: var(--accent);
+            color: var(--text);
+        }
+
+        .btn-skip {
+            background: var(--accent);
+            color: var(--text-soft);
+            padding: 14px 24px;
+        }
+
+        .btn-skip:hover {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .btn-context {
+            background: var(--card);
+            color: var(--text);
+            padding: 16px 12px;
+            font-size: 14px;
+            flex-direction: column;
+            gap: 8px;
+            border: 2px solid var(--border);
+            border-radius: 24px;
+            width: 100%;
+        }
+
+        .btn-context:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-context:disabled {
+            opacity: 0.6;
+            filter: grayscale(0.5);
+        }
+
+        .btn-context small {
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .step-indicator {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-soft);
+            letter-spacing: 0.5px;
+        }
+
+        /* ----- RESUME BANNER ----- */
+        .resume-banner {
+            background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 10%, transparent), color-mix(in srgb, var(--success) 8%, transparent));
+            border: 1px solid var(--primary);
+            border-radius: 24px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 24px;
+            animation: slideDown 0.4s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .resume-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            margin: 8px 4px 0;
+            font-size: 14px;
+        }
+
+        .resume-btn.secondary {
+            background: var(--text-soft);
+        }
+
+        /* ----- VIEWS (welcome / history / setup / summary) ----- */
+        .view-title {
+            font-size: 14px;
+            letter-spacing: 1.2px;
+            color: var(--text-soft);
+            font-weight: 800;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-transform: uppercase;
+        }
+
+        .close-button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-soft);
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .close-button:hover {
+            background: var(--accent);
+            color: var(--text);
+            transform: rotate(90deg);
+        }
+
+        .scroll {
+            max-height: 440px;
+            overflow-y: auto;
+            padding-right: 8px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* ----- WELCOME ----- */
+        .welcome-content {
+            text-align: center;
+            padding: 40px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             height: 100%;
         }
-        
+
         .welcome-icon {
-            font-size: 72px; 
+            font-size: 80px;
             margin-bottom: 24px;
-            animation: pulse 2s infinite;
+            animation: float 3s ease-in-out infinite;
         }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
         }
-        
+
         .welcome-title {
-            font-size: 28px; 
+            font-size: 32px;
             font-weight: 800;
-            margin: 0 0 16px 0;
-            background: linear-gradient(45deg, var(--text), var(--sub));
+            margin: 0 0 16px;
+            background: linear-gradient(135deg, var(--text), var(--text-soft));
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
         }
-        
+
         .welcome-desc {
-            color: var(--sub); 
-            font-size: 16px; 
-            margin-bottom: 32px; 
+            color: var(--text-soft);
+            font-size: 16px;
+            margin-bottom: 32px;
             line-height: 1.6;
-            max-width: 380px;
+            max-width: 400px;
         }
-        
+
+        .context-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        /* ----- HISTORY / CALENDAR ----- */
+        .cal {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            margin-bottom: 24px;
+            background: var(--accent);
+            padding: 16px;
+            border-radius: 24px;
+        }
+
+        .cal-day-header {
+            text-align: center;
+            font-weight: 700;
+            font-size: 12px;
+            color: var(--text-soft);
+            padding: 8px 0;
+        }
+
+        .cal-d {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .cal-d:hover {
+            transform: scale(1.08);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .cal-d.has {
+            background: color-mix(in srgb, var(--primary) 8%, var(--card));
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .cal-d.today {
+            border: 2px solid var(--warning);
+        }
+
+        .cal-d.completed {
+            position: relative;
+        }
+
+        .cal-d.completed::after {
+            content: '✓';
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 10px;
+            color: var(--success);
+        }
+
+        .cal-d.partial::after {
+            content: '~';
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 10px;
+            color: var(--warning);
+        }
+
+        /* ----- HISTORY CARDS ----- */
+        .history-card {
+            background: var(--accent);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 16px;
+            position: relative;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+
+        .history-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .log-answer {
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .log-answer:last-child {
+            border-bottom: none;
+        }
+
+        .log-question {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-soft);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 2px;
+        }
+
+        .log-value {
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .log-delete-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: var(--text-soft);
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .log-delete-btn:hover {
+            background: color-mix(in srgb, var(--error) 15%, transparent);
+            color: var(--error);
+            transform: rotate(90deg);
+        }
+
+        /* ----- EDITOR (setup) ----- */
+        .editor-section-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .editor-add-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .edit-row {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .editor-icon-input {
+            width: 70px;
+            text-align: center;
+            font-size: 24px;
+            padding: 8px;
+            border-radius: 16px;
+        }
+
+        .editor-label-input {
+            flex: 1;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .editor-order-controls {
+            display: flex;
+            gap: 6px;
+        }
+
+        .order-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--accent);
+            border: 1px solid var(--border);
+            font-size: 18px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .order-btn:hover:not(:disabled) {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .ctx-pill {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: 40px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text-soft);
+            display: inline-block;
+            cursor: pointer;
+            transition: var(--transition);
+            user-select: none;
+        }
+
+        .ctx-pill.on {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .editor-delete-btn {
+            background: color-mix(in srgb, var(--error) 10%, transparent);
+            color: var(--error);
+            border: 1px solid color-mix(in srgb, var(--error) 30%, transparent);
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .editor-delete-btn:hover {
+            background: var(--error);
+            color: white;
+        }
+
+        /* ----- SUMMARY VIEW ----- */
         .summary-icon {
-            font-size: 64px; 
+            font-size: 72px;
             margin: 24px 0 32px;
             color: var(--success);
             animation: bounce 1s ease;
         }
-        
+
         @keyframes bounce {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+            50% { transform: translateY(-12px); }
         }
-        
+
         .summary-title {
-            font-size: 26px;
+            font-size: 28px;
             font-weight: 800;
             margin-bottom: 24px;
         }
-        
+
+        .summary-context {
+            background: var(--accent);
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 6px solid var(--primary);
+            text-align: left;
+        }
+
+        .summary-context-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 700;
+        }
+
         .summary-list {
-            text-align: left; 
-            margin-bottom: 32px;
-            max-height: 300px;
+            max-height: 340px;
             overflow-y: auto;
             padding-right: 8px;
+            margin-bottom: 24px;
         }
-        
+
         .summary-item {
-            padding: 14px 0; 
-            border-bottom: 1px solid var(--border); 
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
             font-size: 14px;
-            transition: var(--transition);
         }
-        
-        .summary-item:hover {
-            background: var(--accent);
-            border-radius: 12px;
-            padding-left: 8px;
+
+        .summary-item:last-child {
+            border-bottom: none;
         }
-        
+
         .summary-label {
-            color: var(--sub); 
-            font-size: 11px; 
+            color: var(--text-soft);
+            font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-weight: 700;
             margin-bottom: 4px;
             display: block;
         }
-        
+
         .summary-value {
-            font-weight: 700;
+            font-weight: 600;
             font-size: 16px;
-            color: var(--text);
         }
-        
-        .header-buttons {
-            display: flex; 
-            gap: 10px;
-        }
-        
-        .header-button {
-            width: 40px;
-            height: 40px;
-            border-radius: 14px;
+
+        /* ----- MODAL ----- */
+        #customModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            z-index: 1000;
+            padding: 20px;
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        #customModal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-card {
             background: var(--card);
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow-sm);
-            transition: var(--transition);
-        }
-        
-        .header-button:hover {
-            background: var(--accent);
-            transform: scale(1.05);
-            box-shadow: var(--shadow-md);
-        }
-        
-        .view-title {
-            font-size: 13px; 
-            letter-spacing: 1.2px; 
-            color: var(--sub); 
-            font-weight: 800;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .close-button {
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: var(--sub);
-            cursor: pointer;
-            width: 36px;
-            height: 36px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition);
-        }
-        
-        .close-button:hover {
-            background: var(--accent);
-            color: var(--text);
-            transform: rotate(90deg);
-        }
-        
-        .step-indicator {
-            text-align: center; 
-            margin-top: 20px;
-            font-size: 12px; 
-            font-weight: 800; 
-            color: var(--sub);
-            letter-spacing: 1px;
-        }
-        
-        .range-container {
+            border-radius: 32px;
+            padding: 32px;
             width: 100%;
+            max-width: 440px;
             text-align: center;
-            margin-top: 16px;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid var(--border);
         }
-        
-        .range-value {
-            font-size: 56px; 
-            font-weight: 900; 
-            color: var(--p);
+
+        #customModal.active .modal-card {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        #modalTitle {
+            font-size: 24px;
+            font-weight: 800;
             margin-bottom: 16px;
-            font-variant-numeric: tabular-nums;
-            line-height: 1;
         }
-        
-        input[type="range"] {
-            width: 100%;
-            height: 40px;
-            -webkit-appearance: none;
-            background: transparent;
-            margin: 0;
+
+        #modalBody {
+            color: var(--text-soft);
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 28px;
         }
-        
-        input[type="range"]:focus {
-            outline: none;
+
+        .modal-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
         }
-        
-        input[type="range"]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 6px;
-            cursor: pointer;
-            background: var(--border);
-            border-radius: 3px;
-            border: none;
+
+        /* ----- UTILITY ----- */
+        .hidden {
+            display: none !important;
         }
-        
-        input[type="range"]::-webkit-slider-thumb {
-            height: 28px;
-            width: 28px;
-            border-radius: 50%;
-            background: var(--p);
-            cursor: pointer;
-            -webkit-appearance: none;
-            margin-top: -11px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-            border: 3px solid white;
-            transition: var(--transition);
+
+        footer {
+            margin-top: 16px;
+            color: var(--text-soft);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.8;
+            text-align: center;
+            padding: 16px;
         }
-        
-        input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.15);
-            box-shadow: 0 3px 8px rgba(0,0,0,0.25);
-        }
-        
-        input[type="range"]::-moz-range-track {
-            width: 100%;
-            height: 6px;
-            cursor: pointer;
-            background: var(--border);
-            border-radius: 3px;
-            border: none;
-        }
-        
-        input[type="range"]::-moz-range-thumb {
-            height: 28px;
-            width: 28px;
-            border-radius: 50%;
-            background: var(--p);
-            cursor: pointer;
-            border: 3px solid white;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        }
-        
-        @media (max-width: 480px) {
+
+        /* ----- RESPONSIVE ----- */
+        @media (max-width: 500px) {
             .card {
-                border-radius: 24px;
                 padding: 24px;
+                border-radius: 28px;
             }
-            
-            h1 {
-                font-size: 26px;
+
+            .context-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
-            
+
             .chip {
-                padding: 12px 10px;
-                min-width: 75px;
+                min-width: 76px;
+                padding: 10px 6px;
             }
-            
+
             .chip span:first-child {
                 font-size: 22px;
             }
-            
+
             .chip span:last-child {
                 font-size: 10px;
             }
-            
+
             .q-label {
-                font-size: 22px;
-                margin: 20px 0 24px;
+                font-size: 20px;
             }
-            
+
             .controls {
                 flex-direction: column;
-                gap: 12px;
             }
-            
+
             .btn-p, .btn-skip {
                 width: 100%;
-                padding: 16px;
             }
-            
+
             .modal-card {
-                border-radius: 24px;
                 padding: 24px;
             }
-            
-            .welcome-content {
-                padding: 40px 20px;
-            }
-            
-            .welcome-icon {
-                font-size: 60px;
-            }
-            
-            .welcome-title {
-                font-size: 24px;
+        }
+
+        @media (max-width: 380px) {
+            .context-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -898,1313 +1192,1071 @@
         <header>
             <div>
                 <h1>Skeleton Logger</h1>
-                <small id="timeStatus">v1.5.3 • Fully Functional</small>
+                <span id="timeStatus">v1.5.4 · tab-wise</span>
             </div>
             <div class="header-buttons">
-                <button class="header-button" onclick="showView('history')" aria-label="View history">📅</button>
-                <button class="header-button" onclick="showView('setup')" aria-label="Open settings">⚙️</button>
+                <button class="header-button" onclick="ui.showView('history')" aria-label="History">📅</button>
+                <button class="header-button" onclick="ui.showView('setup')" aria-label="Settings">⚙️</button>
             </div>
         </header>
 
-        <div class="chip-grid" id="ctxGrid" role="tablist" aria-label="Context tabs"></div>
+        <!-- context tabs (chip grid) -->
+        <div class="chip-grid" id="ctxGrid" role="tablist"></div>
 
-        <main class="card" role="main">
+        <!-- main card: dynamic views injected here -->
+        <main class="card" id="mainCard">
+            <!-- WELCOME VIEW -->
             <div id="welcomeView">
                 <div class="welcome-content">
                     <div class="welcome-icon">🦴</div>
-                    <h2 class="welcome-title">Daily Skeleton</h2>
-                    <p class="welcome-desc">Fact-based logging. Select a context to begin your daily tracking journey.</p>
-                    <button class="btn-p" onclick="fastStart()" aria-label="Auto-detect current context">
-                        <span>Auto-Detect Context</span>
+                    <h2 class="welcome-title">daily skeleton</h2>
+                    <p class="welcome-desc">Track your day with context‑aware prompts.<br>Pick a tab to begin.</p>
+                    <div class="context-grid" id="welcomeContextGrid"></div>
+                    <button class="btn-p" style="margin-top:24px;" onclick="logger.fastStart()">
+                        <span>⏱️ auto‑detect context</span>
                     </button>
                 </div>
             </div>
 
+            <!-- LOGGER VIEW (active questioning) -->
             <div id="loggerView" class="hidden">
-                <div class="prog" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                    <div class="prog-fill" id="progBar" style="width: 0%"></div>
+                <div class="context-header">
+                    <div class="context-title">
+                        <span id="contextIcon">🌅</span>
+                        <span id="contextLabel">Morning</span>
+                    </div>
+                    <div class="context-status" id="contextStatus">In Progress</div>
                 </div>
-                <div class="q-cat" id="qCat" style="font-size:11px; font-weight:900; color:var(--p); margin-bottom:12px; letter-spacing:1px;" aria-live="polite">CONTEXT</div>
-                <div class="q-label" id="qLab" aria-live="assertive">Question?</div>
+                <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <div class="prog-fill" id="progBar" style="width:0%"></div>
+                </div>
+
+                <!-- resume banner (appears when progress exists) -->
+                <div id="resumeBanner" class="resume-banner hidden">
+                    <div style="font-weight:700; margin-bottom:6px;">📋 unfinished business</div>
+                    <div style="font-size:14px; margin-bottom:10px;">you have unanswered questions</div>
+                    <button class="resume-btn" onclick="logger.resumeProgress()">↻ resume</button>
+                    <button class="resume-btn secondary" onclick="logger.resetProgress()">⟲ start over</button>
+                </div>
+
+                <div class="q-label" id="qLab" aria-live="assertive">loading…</div>
                 <div class="input-area" id="qInp" aria-live="polite"></div>
+
                 <div class="controls">
-                    <button class="btn-sec" id="backBtn" aria-label="Previous question">← Back</button>
-                    <div style="display:flex; gap:12px; width:100%;">
-                        <button class="btn-skip" id="skipBtn" aria-label="Skip this question">Skip</button>
-                        <button class="btn-p" id="nextBtn" aria-label="Next question">Next →</button>
+                    <button class="btn-sec" id="backBtn" aria-label="Previous question">← back</button>
+                    <div style="display:flex; gap:10px; flex:1;">
+                        <button class="btn-skip" id="skipBtn" aria-label="Skip">skip</button>
+                        <button class="btn-p" id="nextBtn" aria-label="Next">next →</button>
                     </div>
                 </div>
                 <div class="step-indicator" id="step">1 / 1</div>
+                <div style="text-align:center; margin-top:16px;">
+                    <button class="btn-sec" onclick="logger.switchContext()" style="padding:8px 16px;">⇄ switch tab</button>
+                </div>
             </div>
 
+            <!-- HISTORY VIEW -->
             <div id="historyView" class="hidden">
                 <div class="view-title">
-                    <span>HISTORY ARCHIVE</span>
-                    <button class="close-button" onclick="showView('welcome')" aria-label="Close history view">✕</button>
+                    <span>📆 history archive</span>
+                    <button class="close-button" onclick="ui.showView('welcome')" aria-label="Close">✕</button>
                 </div>
-                <input type="search" id="historySearch" placeholder="Search entries..." oninput="renderHistoryList()" aria-label="Search history">
-                <div class="cal" id="calContainer" aria-label="Monthly calendar"></div>
-                <div id="dayDetail" class="scroll" aria-live="polite"></div>
+                <input type="search" id="historySearch" placeholder="🔍 search entries..." oninput="history.renderList()">
+                <div class="cal" id="calContainer" aria-label="calendar"></div>
+                <div id="dayDetail" class="scroll"></div>
             </div>
 
+            <!-- SETUP (edit contexts/questions) -->
             <div id="setupView" class="hidden">
                 <div class="view-title">
-                    <span>EDITORIAL CONFIG</span>
-                    <button class="close-button" onclick="showView('welcome')" aria-label="Close settings">✕</button>
+                    <span>⚙️ editorial config</span>
+                    <button class="close-button" onclick="ui.showView('welcome')" aria-label="Close">✕</button>
                 </div>
-                <div class="scroll">
+                <div class="scroll" id="setupScroll">
                     <div id="ctxEditList"></div>
                     <div id="qEditList"></div>
                 </div>
-                <button class="btn-p" style="width:100%; margin-top:24px;" onclick="saveConfig()" aria-label="Save configuration changes">Save All Changes</button>
+                <button class="btn-p" style="width:100%; margin-top:24px;" onclick="config.saveAll()">💾 save all changes</button>
             </div>
 
+            <!-- SUMMARY VIEW (after completing a context) -->
             <div id="summaryView" class="hidden">
-                <div style="text-align:center; padding: 40px 20px 20px;">
+                <div style="text-align:center; padding:20px 16px 16px;">
                     <div class="summary-icon">✨</div>
-                    <h2 class="summary-title">Logged Successfully</h2>
+                    <h2 class="summary-title">session complete</h2>
+                    <div style="background:var(--accent); border-radius:20px; padding:18px; margin-bottom:24px;">
+                        <div style="font-size:13px; color:var(--text-soft); margin-bottom:4px;">logged on</div>
+                        <div style="font-size:20px; font-weight:800;" id="summaryDate"></div>
+                    </div>
                     <div id="summList" class="summary-list"></div>
-                    <button class="btn-p" style="width:100%" id="dlToday" aria-label="Download today's log as text file">Download .txt</button>
+                    <button class="btn-p" style="width:100%; margin-top:10px;" id="dlToday">📥 download log (.txt)</button>
+                    <button class="btn-sec" style="margin-top:12px;" onclick="ui.showView('welcome')">🏠 home</button>
                 </div>
             </div>
         </main>
-        <footer aria-label="Application footer">v1.5.3 • OPTIONS & ORDER</footer>
+
+        <footer>v1.5.4 · tab‑wise prompting</footer>
     </div>
 
+    <!-- MODAL (confirmation dialogs) -->
     <div id="customModal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalBody">
         <div class="modal-card">
             <h3 id="modalTitle">Notice</h3>
             <p id="modalBody"></p>
             <div class="modal-buttons">
-                <button class="btn-skip" id="modalCancel" aria-label="Cancel action">Cancel</button>
-                <button class="btn-p" id="modalConfirm" aria-label="Confirm action">OK</button>
+                <button class="btn-sec" id="modalCancel">cancel</button>
+                <button class="btn-p" id="modalConfirm">ok</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Constants
-        const LOCAL_STORAGE_KEYS = {
-            CONTEXTS: 'skel_ctx_v7',
-            QUESTIONS: 'skel_q_v7',
-            HISTORY: 'skel_h_v7'
-        };
-        
-        const DEFAULT_CTX = [
-            {id:'morning', l:'Morning', i:'🌅'}, 
-            {id:'afternoon', l:'Afternoon', i:'☀️'}, 
-            {id:'evening', l:'Evening', i:'🌙'}
-        ];
-        
-        const DEFAULT_Q = [
-            {id:'q1', c:['morning'], l:'Mood today?', t:'select', o:'Excellent,Good,Neutral,Tired', d:'Good'},
-            {id:'q2', c:['morning'], l:'Daily Tasks', t:'multi', o:'Work,Exercise,Reading,Cleaning', d:[]},
-            {id:'q3', c:['morning','afternoon','evening'], l:'Water Intake (L)', t:'range', d:'1.5'}
-        ];
+        (function() {
+            // ---------- STORAGE KEYS ----------
+            const STORAGE = {
+                CONTEXTS: 'skel_ctx_v7',
+                QUESTIONS: 'skel_q_v7',
+                HISTORY: 'skel_h_v7',
+                PROGRESS: 'skel_progress_v7'
+            };
 
-        // State variables
-        let contexts = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.CONTEXTS) || JSON.stringify(DEFAULT_CTX));
-        let questions = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.QUESTIONS) || JSON.stringify(DEFAULT_Q));
-        let history = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.HISTORY) || '{}');
-        let filteredQuestions = [];
-        let currentQuestionIndex = 0;
-        let answers = {};
-        let activeContext = '';
+            // ---------- DEFAULTS ----------
+            const DEFAULT_CTX = [
+                { id: 'morning', l: 'Morning', i: '🌅' },
+                { id: 'afternoon', l: 'Afternoon', i: '☀️' },
+                { id: 'evening', l: 'Evening', i: '🌙' }
+            ];
+            const DEFAULT_Q = [
+                { id: 'q1', c: ['morning'], l: 'How is your mood?', t: 'select', o: 'Excellent,Good,Neutral,Tired', d: 'Good' },
+                { id: 'q2', c: ['morning'], l: 'Daily activities', t: 'multi', o: 'Work,Exercise,Reading,Cleaning', d: [] },
+                { id: 'q3', c: ['morning', 'afternoon', 'evening'], l: 'Water intake (L)', t: 'range', d: '1.5' }
+            ];
 
-        // Initialize the application
-        function init() {
-            renderChips();
-            setupEventListeners();
-            setupModal();
-            checkWelcomeState();
-        }
+            // ---------- GLOBAL STATE (encapsulated) ----------
+            const state = {
+                contexts: [],
+                questions: [],
+                history: {},
+                progress: {},
+                filteredQuestions: [],
+                currentQuestionIndex: 0,
+                answers: {},
+                activeContext: '',
+                isResuming: false
+            };
 
-        // Set up event listeners for static elements
-        function setupEventListeners() {
-            document.getElementById('nextBtn').addEventListener('click', handleNext);
-            document.getElementById('skipBtn').addEventListener('click', handleSkip);
-            document.getElementById('backBtn').addEventListener('click', handleBack);
-            document.getElementById('dlToday').addEventListener('click', () => dlDay(getLocalDay()));
-            document.getElementById('historySearch').addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    e.target.value = '';
-                    renderHistoryList();
-                }
-            });
-        }
-
-        // Set up modal behavior
-        function setupModal() {
-            const modal = document.getElementById('customModal');
-            const modalBg = modal;
-            const modalContent = document.querySelector('.modal-card');
-            
-            // Close modal when clicking background
-            modalBg.addEventListener('click', (e) => {
-                if (e.target === modalBg) {
-                    closeModal();
-                }
-            });
-            
-            // Close modal with Escape key
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-                    closeModal();
-                }
-            });
-            
-            // Set up confirm/cancel buttons
-            document.getElementById('modalConfirm').addEventListener('click', () => {
-                if (window.modalConfirmCallback) {
-                    window.modalConfirmCallback();
-                    window.modalConfirmCallback = null;
-                }
-                closeModal();
-            });
-            
-            document.getElementById('modalCancel').addEventListener('click', closeModal);
-        }
-
-        // Check if we should show welcome screen or logger
-        function checkWelcomeState() {
-            // Show welcome view by default
-            showView('welcome');
-        }
-
-        // Get current date in YYYY-MM-DD format
-        function getLocalDay(dateObj = new Date()) {
-            const year = dateObj.getFullYear();
-            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const day = String(dateObj.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        // Render context chips
-        function renderChips() {
-            const ctxGrid = document.getElementById('ctxGrid');
-            ctxGrid.innerHTML = contexts.map(c => `
-                <div class="chip ${activeContext === c.id ? 'active' : ''}" 
-                     onclick="selectContext('${c.id}')" 
-                     id="c-${c.id}"
-                     role="tab"
-                     aria-selected="${activeContext === c.id}"
-                     aria-controls="loggerView"
-                     tabindex="0"
-                     onkeydown="if(event.key==='Enter' || event.key===' ') selectContext('${c.id}')">
-                    <span aria-hidden="true">${c.i}</span>
-                    <span>${c.l}</span>
-                </div>
-            `).join('');
-            
-            // Add keyboard navigation for chips
-            document.querySelectorAll('.chip').forEach(chip => {
-                chip.addEventListener('keydown', (e) => {
-                    if (e.key === 'ArrowRight') {
-                        const next = chip.nextElementSibling;
-                        if (next) next.focus();
-                    } else if (e.key === 'ArrowLeft') {
-                        const prev = chip.previousElementSibling;
-                        if (prev) prev.focus();
+            // ---------- HELPER FUNCTIONS ----------
+            const helpers = {
+                // safe JSON parse
+                load(key, fallback) {
+                    try {
+                        return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+                    } catch {
+                        return fallback;
                     }
-                });
-            });
-        }
+                },
 
-        // Show a specific view
-        function showView(viewName) {
-            // Hide all views
-            ['welcomeView', 'loggerView', 'historyView', 'setupView', 'summaryView'].forEach(id => {
-                document.getElementById(id).classList.add('hidden');
-            });
-            
-            // Show requested view
-            const viewElement = document.getElementById(viewName + 'View');
-            if (viewElement) {
-                viewElement.classList.remove('hidden');
-                viewElement.setAttribute('aria-hidden', 'false');
-                
-                // Special handling for different views
-                if (viewName === 'history') {
-                    renderCalendar();
-                } else if (viewName === 'setup') {
-                    renderEditor();
-                } else if (viewName === 'welcome') {
-                    // Reset active context styling
-                    document.querySelectorAll('.chip').forEach(chip => {
-                        chip.classList.remove('active');
+                // save to localStorage
+                persist(key, data) {
+                    localStorage.setItem(key, JSON.stringify(data));
+                },
+
+                // YYYY-MM-DD
+                getLocalDay(date = new Date()) {
+                    const y = date.getFullYear();
+                    const m = String(date.getMonth() + 1).padStart(2, '0');
+                    const d = String(date.getDate()).padStart(2, '0');
+                    return `${y}-${m}-${d}`;
+                },
+
+                // format date for display
+                formatDate(dateStr) {
+                    const [y, m, d] = dateStr.split('-');
+                    const date = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+                    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+                },
+
+                // escape HTML
+                escape(str) {
+                    if (typeof str !== 'string') return str;
+                    return str.replace(/[&<>"]/g, function(m) {
+                        if (m === '&') return '&amp;';
+                        if (m === '<') return '&lt;';
+                        if (m === '>') return '&gt;';
+                        if (m === '"') return '&quot;';
+                        return m;
                     });
+                },
+
+                // cleanup old progress (>7 days)
+                cleanupProgress() {
+                    const today = new Date();
+                    const cutoff = new Date(today.setDate(today.getDate() - 7));
+                    const cutoffStr = helpers.getLocalDay(cutoff);
+                    const prog = state.progress;
+                    Object.keys(prog).forEach(key => {
+                        const datePart = key.split('_')[0];
+                        if (datePart < cutoffStr) delete prog[key];
+                    });
+                    helpers.persist(STORAGE.PROGRESS, prog);
                 }
-            }
-            
-            // Update URL hash for direct linking/bookmarking
-            window.history.replaceState(null, null, `#${viewName}`);
-        }
+            };
 
-        // Select a context to start logging
-        function selectContext(contextId) {
-            activeContext = contextId;
-            filteredQuestions = questions.filter(q => q.c.includes(contextId));
-            
-            if (filteredQuestions.length === 0) {
-                showModal("Configuration Error", "No prompts found for this context tab. Please add questions in Settings.");
-                return;
-            }
-            
-            // Update active chip styling
-            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-            const chip = document.getElementById(`c-${contextId}`);
-            if (chip) chip.classList.add('active');
-            
-            // Reset logger state
-            currentQuestionIndex = 0;
-            answers = {};
-            
-            // Show logger view and render first question
-            showView('logger');
-            renderCurrentQuestion();
-        }
+            // ---------- MODAL CONTROLLER ----------
+            const modal = {
+                element: document.getElementById('customModal'),
+                titleEl: document.getElementById('modalTitle'),
+                bodyEl: document.getElementById('modalBody'),
+                confirmCallback: null,
 
-        // Auto-detect context based on current time
-        function fastStart() {
-            const hour = new Date().getHours();
-            let contextId;
-            
-            if (hour < 12) contextId = 'morning';
-            else if (hour < 17) contextId = 'afternoon';
-            else contextId = 'evening';
-            
-            // Fallback if default contexts don't exist
-            if (!contexts.some(c => c.id === contextId)) {
-                contextId = contexts[0]?.id || 'morning';
-            }
-            
-            selectContext(contextId);
-        }
+                init() {
+                    document.getElementById('modalConfirm').addEventListener('click', () => {
+                        if (this.confirmCallback) this.confirmCallback();
+                        this.close();
+                    });
+                    document.getElementById('modalCancel').addEventListener('click', () => this.close());
+                    this.element.addEventListener('click', (e) => {
+                        if (e.target === this.element) this.close();
+                    });
+                    document.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape' && !this.element.classList.contains('hidden')) this.close();
+                    });
+                },
 
-        // Render the current question
-        function renderCurrentQuestion() {
-            if (currentQuestionIndex >= filteredQuestions.length) return;
-            
-            const question = filteredQuestions[currentQuestionIndex];
-            const contextObj = contexts.find(c => c.id === activeContext);
-            
-            // Update UI elements
-            document.getElementById('qCat').textContent = (contextObj ? contextObj.l : activeContext).toUpperCase();
-            document.getElementById('qLab').textContent = question.l;
-            document.getElementById('step').textContent = `${currentQuestionIndex + 1} / ${filteredQuestions.length}`;
-            
-            // Update progress bar with accessibility attributes
-            const progressPercent = Math.round(((currentQuestionIndex + 1) / filteredQuestions.length) * 100);
-            const progBar = document.getElementById('progBar');
-            progBar.style.width = `${progressPercent}%`;
-            progBar.parentElement.setAttribute('aria-valuenow', progressPercent);
-            
-            // Render question input
-            renderQuestionInput(question);
-            
-            // Update back button state
-            document.getElementById('backBtn').disabled = currentQuestionIndex === 0;
-        }
+                show(title, body, onConfirm) {
+                    this.titleEl.textContent = title;
+                    this.bodyEl.textContent = body;
+                    this.confirmCallback = onConfirm || null;
+                    this.element.classList.remove('hidden');
+                    setTimeout(() => this.element.classList.add('active'), 10);
+                    setTimeout(() => document.getElementById('modalConfirm').focus(), 200);
+                },
 
-        // Render input field based on question type
-        function renderQuestionInput(question) {
-            const inputArea = document.getElementById('qInp');
-            inputArea.innerHTML = '';
-            
-            // Get current answer or default value
-            let currentValue = answers[question.id] !== undefined ? answers[question.id] : question.d;
-            
-            // Create input based on question type
-            switch(question.t) {
-                case 'time':
-                    createTimeInput(question, currentValue);
-                    break;
-                case 'range':
-                    createRangeInput(question, currentValue);
-                    break;
-                case 'toggle':
-                    createToggleInput(question, currentValue);
-                    break;
-                case 'textarea':
-                    createTextareaInput(question, currentValue);
-                    break;
-                case 'select':
-                case 'multi':
-                    createOptionInput(question, currentValue);
-                    break;
-                default:
-                    createTextInput(question, currentValue);
-            }
-        }
-
-        // Create time input
-        function createTimeInput(question, value) {
-            const inputArea = document.getElementById('qInp');
-            const input = document.createElement('input');
-            input.type = 'time';
-            input.id = `input-${question.id}`;
-            input.value = value || '';
-            input.className = 'time-input';
-            input.setAttribute('aria-label', question.l);
-            inputArea.appendChild(input);
-            input.focus();
-        }
-
-        // Create range input with visual feedback
-        function createRangeInput(question, value) {
-            const inputArea = document.getElementById('qInp');
-            const container = document.createElement('div');
-            container.className = 'range-container';
-            
-            // Validate and sanitize value
-            let numValue = parseFloat(value);
-            if (isNaN(numValue)) {
-                numValue = parseFloat(question.d) || 0;
-            }
-            
-            // Display value
-            const valueDisplay = document.createElement('div');
-            valueDisplay.className = 'range-value';
-            valueDisplay.id = `range-value-${question.id}`;
-            valueDisplay.textContent = numValue.toFixed(1);
-            container.appendChild(valueDisplay);
-            
-            // Range slider
-            const input = document.createElement('input');
-            input.type = 'range';
-            input.min = '0';
-            input.max = '10';
-            input.step = '0.5';
-            input.id = `input-${question.id}`;
-            input.value = numValue;
-            input.setAttribute('aria-label', question.l);
-            input.setAttribute('aria-valuenow', numValue);
-            input.setAttribute('aria-valuemin', '0');
-            input.setAttribute('aria-valuemax', '10');
-            
-            // Update display on input
-            input.addEventListener('input', () => {
-                const val = parseFloat(input.value);
-                valueDisplay.textContent = val.toFixed(1);
-                input.setAttribute('aria-valuenow', val);
-            });
-            
-            container.appendChild(input);
-            inputArea.appendChild(container);
-            input.focus();
-        }
-
-        // Create toggle switch
-        function createToggleInput(question, value) {
-            const inputArea = document.getElementById('qInp');
-            const label = document.createElement('label');
-            label.className = 'switch';
-            label.innerHTML = `
-                <input type="checkbox" id="input-${question.id}" ${value ? 'checked' : ''} aria-label="${question.l}">
-                <span class="slider"></span>
-            `;
-            inputArea.appendChild(label);
-            document.getElementById(`input-${question.id}`).focus();
-        }
-
-        // Create textarea input
-        function createTextareaInput(question, value) {
-            const inputArea = document.getElementById('qInp');
-            const textarea = document.createElement('textarea');
-            textarea.id = `input-${question.id}`;
-            textarea.value = value || '';
-            textarea.placeholder = "Type your response here...";
-            textarea.setAttribute('aria-label', question.l);
-            inputArea.appendChild(textarea);
-            textarea.focus();
-        }
-
-        // Create option pills (select or multi)
-        function createOptionInput(question, value) {
-            const inputArea = document.getElementById('qInp');
-            const container = document.createElement('div');
-            container.className = 'option-container';
-            
-            const options = (question.o || "").split(',').map(o => o.trim()).filter(o => o);
-            
-            options.forEach(opt => {
-                const pill = document.createElement('div');
-                pill.className = 'opt-pill';
-                pill.textContent = opt;
-                pill.setAttribute('role', 'button');
-                pill.setAttribute('tabindex', '0');
-                pill.setAttribute('aria-pressed', isOptionSelected(question, opt, value));
-                
-                // Set active state
-                if (isOptionSelected(question, opt, value)) {
-                    pill.classList.add('active');
+                close() {
+                    this.element.classList.remove('active');
+                    setTimeout(() => this.element.classList.add('hidden'), 250);
+                    this.confirmCallback = null;
                 }
-                
-                // Add click and keyboard handlers
-                pill.addEventListener('click', () => toggleOption(question.id, opt, question.t));
-                pill.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        toggleOption(question.id, opt, question.t);
+            };
+
+            // ---------- UI RENDERING (context chips, welcome grid) ----------
+            const ui = {
+                // show one of: welcome, logger, history, setup, summary
+                showView(view) {
+                    ['welcomeView', 'loggerView', 'historyView', 'setupView', 'summaryView'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.classList.add('hidden');
+                    });
+                    const target = document.getElementById(view + 'View');
+                    if (target) target.classList.remove('hidden');
+
+                    if (view === 'history') history.renderCalendar();
+                    if (view === 'setup') config.render();
+                    if (view === 'welcome') welcome.renderGrid();
+
+                    // update url hash (optional)
+                    if (view !== 'welcome') window.location.hash = view;
+                    else window.location.hash = '';
+                },
+
+                // refresh context chips (header)
+                renderChips() {
+                    const grid = document.getElementById('ctxGrid');
+                    const today = helpers.getLocalDay();
+                    grid.innerHTML = state.contexts.map(ctx => {
+                        const status = logger.getContextStatus(today, ctx.id);
+                        const statusClass = status === 'completed' ? 'completed' : (status === 'in-progress' ? 'in-progress' : '');
+                        const unanswered = logger.getUnansweredCount(today, ctx.id);
+                        const activeClass = state.activeContext === ctx.id ? 'active' : '';
+                        return `
+                            <div class="chip ${activeClass} ${statusClass}" 
+                                 onclick="logger.select('${ctx.id}')"
+                                 id="c-${ctx.id}"
+                                 role="tab"
+                                 tabindex="0">
+                                ${unanswered > 0 ? `<div class="progress-badge">${unanswered}</div>` : ''}
+                                <span>${helpers.escape(ctx.i)}</span>
+                                <span>${helpers.escape(ctx.l)}</span>
+                            </div>
+                        `;
+                    }).join('');
+                },
+
+                // refresh welcome context grid
+                renderWelcomeGrid() {
+                    const container = document.getElementById('welcomeContextGrid');
+                    const today = helpers.getLocalDay();
+                    container.innerHTML = state.contexts.map(ctx => {
+                        const status = logger.getContextStatus(today, ctx.id);
+                        const statusText = status === 'completed' ? 'completed' : (status === 'in-progress' ? 'resume' : 'start');
+                        const statusClass = status === 'completed' ? 'status-completed' : (status === 'in-progress' ? 'status-in-progress' : '');
+                        const disabled = status === 'completed' ? 'disabled' : '';
+                        return `
+                            <button class="btn-context" ${disabled} onclick="${disabled ? '' : `logger.select('${ctx.id}')`}">
+                                <span>${helpers.escape(ctx.i)}</span>
+                                <span>${helpers.escape(ctx.l)}</span>
+                                <small class="context-status ${statusClass}">${statusText}</small>
+                            </button>
+                        `;
+                    }).join('');
+                }
+            };
+
+            // ---------- LOGGER (core questioning) ----------
+            const logger = {
+                // get status for a context on given date
+                getContextStatus(date, ctxId) {
+                    if ((state.history[date] || []).some(log => log.ctx === ctxId)) return 'completed';
+                    const key = `${date}_${ctxId}`;
+                    if (state.progress[key] && Object.keys(state.progress[key].answers || {}).length > 0) return 'in-progress';
+                    return 'not-started';
+                },
+
+                getUnansweredCount(date, ctxId) {
+                    const key = `${date}_${ctxId}`;
+                    if (!state.progress[key]) return 0;
+                    const ctxQs = state.questions.filter(q => q.c.includes(ctxId));
+                    const answered = Object.keys(state.progress[key].answers || {}).length;
+                    return Math.max(0, ctxQs.length - answered);
+                },
+
+                select(ctxId) {
+                    state.activeContext = ctxId;
+                    state.filteredQuestions = state.questions.filter(q => q.c.includes(ctxId));
+                    if (state.filteredQuestions.length === 0) {
+                        modal.show('No prompts', 'This tab has no questions. Add some in Settings.');
+                        return;
                     }
-                });
-                
-                container.appendChild(pill);
-            });
-            
-            inputArea.appendChild(container);
-            
-            // Focus first option
-            const firstOption = container.querySelector('.opt-pill');
-            if (firstOption) firstOption.focus();
-        }
 
-        // Check if an option is selected
-        function isOptionSelected(question, option, value) {
-            if (question.t === 'select') {
-                return value === option;
-            } else if (question.t === 'multi') {
-                return Array.isArray(value) && value.includes(option);
-            }
-            return false;
-        }
+                    // update chip active state
+                    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+                    const chip = document.getElementById(`c-${ctxId}`);
+                    if (chip) chip.classList.add('active');
 
-        // Create text input
-        function createTextInput(question, value) {
-            const inputArea = document.getElementById('qInp');
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.id = `input-${question.id}`;
-            input.value = value || '';
-            input.placeholder = "Type here...";
-            input.setAttribute('aria-label', question.l);
-            inputArea.appendChild(input);
-            input.focus();
-        }
+                    const today = helpers.getLocalDay();
+                    const key = `${today}_${ctxId}`;
+                    const saved = state.progress[key];
 
-        // Toggle option selection for select/multi questions
-        function toggleOption(questionId, option, type) {
-            if (type === 'select') {
-                // For single select, set the value directly
-                answers[questionId] = option;
-            } else if (type === 'multi') {
-                // For multi-select, toggle the option
-                if (!Array.isArray(answers[questionId])) {
-                    answers[questionId] = [];
+                    // reset state
+                    state.answers = {};
+                    state.currentQuestionIndex = 0;
+                    state.isResuming = false;
+
+                    if (saved && Object.keys(saved.answers || {}).length > 0) {
+                        state.currentQuestionIndex = saved.currentQuestionIndex || 0;
+                        state.answers = { ...saved.answers };
+                        state.isResuming = true;
+                    }
+
+                    // update context header
+                    const ctx = state.contexts.find(c => c.id === ctxId);
+                    if (ctx) {
+                        document.getElementById('contextIcon').textContent = ctx.i;
+                        document.getElementById('contextLabel').textContent = ctx.l;
+                    }
+
+                    const statusEl = document.getElementById('contextStatus');
+                    const hasProg = state.isResuming;
+                    statusEl.textContent = hasProg ? 'In Progress' : 'Not Started';
+                    statusEl.className = 'context-status ' + (hasProg ? 'status-in-progress' : '');
+
+                    ui.showView('logger');
+                    this.renderCurrent();
+
+                    const banner = document.getElementById('resumeBanner');
+                    if (hasProg && state.currentQuestionIndex > 0) banner.classList.remove('hidden');
+                    else banner.classList.add('hidden');
+                },
+
+                fastStart() {
+                    const hour = new Date().getHours();
+                    let ctxId = hour < 12 ? 'morning' : (hour < 17 ? 'afternoon' : 'evening');
+                    if (!state.contexts.some(c => c.id === ctxId)) ctxId = state.contexts[0]?.id || 'morning';
+                    this.select(ctxId);
+                },
+
+                renderCurrent() {
+                    if (state.currentQuestionIndex >= state.filteredQuestions.length) {
+                        this.saveToHistory();
+                        return;
+                    }
+
+                    const q = state.filteredQuestions[state.currentQuestionIndex];
+                    document.getElementById('qLab').textContent = q.l;
+                    document.getElementById('step').textContent = `${state.currentQuestionIndex + 1} / ${state.filteredQuestions.length}`;
+
+                    const percent = Math.round(((state.currentQuestionIndex + 1) / state.filteredQuestions.length) * 100);
+                    const bar = document.getElementById('progBar');
+                    bar.style.width = percent + '%';
+                    bar.parentElement.setAttribute('aria-valuenow', percent);
+
+                    this.renderInput(q);
+                    document.getElementById('backBtn').disabled = state.currentQuestionIndex === 0;
+                },
+
+                renderInput(q) {
+                    const area = document.getElementById('qInp');
+                    area.innerHTML = '';
+                    const currentVal = state.answers[q.id] !== undefined ? state.answers[q.id] : q.d;
+
+                    const createPillContainer = () => {
+                        const container = document.createElement('div');
+                        container.className = 'option-container';
+                        return container;
+                    };
+
+                    if (q.t === 'time') {
+                        const inp = document.createElement('input');
+                        inp.type = 'time';
+                        inp.id = `input-${q.id}`;
+                        inp.value = currentVal || '';
+                        area.appendChild(inp);
+                        inp.focus();
+                    } 
+                    else if (q.t === 'range') {
+                        const container = document.createElement('div');
+                        container.className = 'range-container';
+                        const valDisplay = document.createElement('div');
+                        valDisplay.className = 'range-value';
+                        let num = parseFloat(currentVal) || 0;
+                        valDisplay.textContent = num.toFixed(1);
+                        const slider = document.createElement('input');
+                        slider.type = 'range';
+                        slider.min = '0'; slider.max = '10'; slider.step = '0.5';
+                        slider.id = `input-${q.id}`;
+                        slider.value = num;
+                        slider.addEventListener('input', (e) => {
+                            valDisplay.textContent = parseFloat(e.target.value).toFixed(1);
+                        });
+                        container.appendChild(valDisplay);
+                        container.appendChild(slider);
+                        area.appendChild(container);
+                        slider.focus();
+                    }
+                    else if (q.t === 'toggle') {
+                        const label = document.createElement('label');
+                        label.className = 'switch';
+                        label.innerHTML = `<input type="checkbox" id="input-${q.id}" ${currentVal ? 'checked' : ''}><span class="slider"></span>`;
+                        area.appendChild(label);
+                        document.getElementById(`input-${q.id}`).focus();
+                    }
+                    else if (q.t === 'textarea') {
+                        const ta = document.createElement('textarea');
+                        ta.id = `input-${q.id}`;
+                        ta.value = currentVal || '';
+                        ta.placeholder = 'type your response...';
+                        area.appendChild(ta);
+                        ta.focus();
+                    }
+                    else if (q.t === 'select' || q.t === 'multi') {
+                        const container = createPillContainer();
+                        const options = (q.o || '').split(',').map(s => s.trim()).filter(Boolean);
+                        options.forEach(opt => {
+                            const pill = document.createElement('div');
+                            pill.className = 'opt-pill';
+                            pill.textContent = opt;
+                            pill.setAttribute('role', 'button');
+                            pill.tabIndex = 0;
+                            const isSelected = q.t === 'select' ? currentVal === opt : (Array.isArray(currentVal) && currentVal.includes(opt));
+                            if (isSelected) pill.classList.add('active');
+                            pill.addEventListener('click', () => this.toggleOption(q.id, opt, q.t));
+                            pill.addEventListener('keydown', (e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    this.toggleOption(q.id, opt, q.t);
+                                }
+                            });
+                            container.appendChild(pill);
+                        });
+                        area.appendChild(container);
+                        const first = container.querySelector('.opt-pill');
+                        if (first) first.focus();
+                    }
+                    else { // default text
+                        const inp = document.createElement('input');
+                        inp.type = 'text';
+                        inp.id = `input-${q.id}`;
+                        inp.value = currentVal || '';
+                        inp.placeholder = 'type here...';
+                        area.appendChild(inp);
+                        inp.focus();
+                    }
+                },
+
+                toggleOption(qId, opt, type) {
+                    if (type === 'select') {
+                        state.answers[qId] = opt;
+                    } else if (type === 'multi') {
+                        if (!Array.isArray(state.answers[qId])) state.answers[qId] = [];
+                        const idx = state.answers[qId].indexOf(opt);
+                        if (idx > -1) state.answers[qId].splice(idx, 1);
+                        else state.answers[qId].push(opt);
+                    }
+                    this.renderCurrent();
+                    this.saveProgress();
+                },
+
+                captureCurrent() {
+                    const idx = state.currentQuestionIndex;
+                    if (idx >= state.filteredQuestions.length) return;
+                    const q = state.filteredQuestions[idx];
+                    const inp = document.getElementById(`input-${q.id}`);
+                    if (!inp) return;
+                    if (q.t === 'toggle') state.answers[q.id] = inp.checked;
+                    else if (q.t === 'range') state.answers[q.id] = parseFloat(inp.value).toFixed(1);
+                    else state.answers[q.id] = inp.value.trim();
+                },
+
+                handleNext() {
+                    this.captureCurrent();
+                    this.saveProgress();
+                    if (state.currentQuestionIndex < state.filteredQuestions.length - 1) {
+                        state.currentQuestionIndex++;
+                        this.renderCurrent();
+                    } else {
+                        this.saveToHistory();
+                    }
+                },
+
+                handleSkip() {
+                    this.saveProgress();
+                    if (state.currentQuestionIndex < state.filteredQuestions.length - 1) {
+                        state.currentQuestionIndex++;
+                        this.renderCurrent();
+                    } else {
+                        this.saveToHistory();
+                    }
+                },
+
+                handleBack() {
+                    this.captureCurrent();
+                    this.saveProgress();
+                    if (state.currentQuestionIndex > 0) {
+                        state.currentQuestionIndex--;
+                        this.renderCurrent();
+                        this.saveProgress();
+                    }
+                },
+
+                saveProgress() {
+                    if (!state.activeContext || state.filteredQuestions.length === 0) return;
+                    const today = helpers.getLocalDay();
+                    const key = `${today}_${state.activeContext}`;
+                    state.progress[key] = {
+                        currentQuestionIndex: state.currentQuestionIndex,
+                        answers: { ...state.answers }
+                    };
+                    helpers.persist(STORAGE.PROGRESS, state.progress);
+                    ui.renderChips();
+                    ui.renderWelcomeGrid();
+                },
+
+                saveToHistory() {
+                    const today = helpers.getLocalDay();
+                    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                    if (!state.history[today]) state.history[today] = [];
+                    state.history[today].push({
+                        ctx: state.activeContext,
+                        time,
+                        ans: { ...state.answers }
+                    });
+                    helpers.persist(STORAGE.HISTORY, state.history);
+
+                    const key = `${today}_${state.activeContext}`;
+                    if (state.progress[key]) {
+                        delete state.progress[key];
+                        helpers.persist(STORAGE.PROGRESS, state.progress);
+                    }
+
+                    this.showSummary();
+                },
+
+                showSummary() {
+                    const today = helpers.getLocalDay();
+                    document.getElementById('summaryDate').textContent = helpers.formatDate(today);
+                    const container = document.getElementById('summList');
+                    container.innerHTML = '';
+
+                    const dayLogs = state.history[today] || [];
+                    const groups = {};
+                    dayLogs.forEach(log => {
+                        if (!groups[log.ctx]) groups[log.ctx] = [];
+                        groups[log.ctx].push(log);
+                    });
+
+                    Object.entries(groups).forEach(([ctxId, logs]) => {
+                        const ctx = state.contexts.find(c => c.id === ctxId) || { l: ctxId, i: '❓' };
+                        const div = document.createElement('div');
+                        div.className = 'summary-context';
+                        div.innerHTML = `<div class="summary-context-title"><strong>${helpers.escape(ctx.i)} ${helpers.escape(ctx.l)}</strong> <span style="font-size:13px;">${logs.length} session(s)</span></div>`;
+                        logs.forEach(log => {
+                            Object.entries(log.ans).forEach(([qId, val]) => {
+                                const q = state.questions.find(qq => qq.id === qId);
+                                if (!q) return;
+                                const display = Array.isArray(val) ? val.join(', ') : (q.t === 'toggle' ? (val ? 'Yes' : 'No') : val);
+                                div.innerHTML += `
+                                    <div class="summary-item">
+                                        <span class="summary-label">${helpers.escape(q.l)}</span>
+                                        <div class="summary-value">${helpers.escape(display) || '—'}</div>
+                                    </div>
+                                `;
+                            });
+                        });
+                        container.appendChild(div);
+                    });
+
+                    ui.showView('summary');
+                    ui.renderChips();
+                    ui.renderWelcomeGrid();
+                },
+
+                resumeProgress() {
+                    document.getElementById('resumeBanner').classList.add('hidden');
+                    this.renderCurrent();
+                },
+
+                resetProgress() {
+                    const today = helpers.getLocalDay();
+                    const key = `${today}_${state.activeContext}`;
+                    if (state.progress[key]) {
+                        delete state.progress[key];
+                        helpers.persist(STORAGE.PROGRESS, state.progress);
+                    }
+                    state.answers = {};
+                    state.currentQuestionIndex = 0;
+                    state.isResuming = false;
+                    document.getElementById('resumeBanner').classList.add('hidden');
+                    document.getElementById('contextStatus').textContent = 'Not Started';
+                    document.getElementById('contextStatus').className = 'context-status';
+                    this.renderCurrent();
+                },
+
+                switchContext() {
+                    this.saveProgress();
+                    ui.showView('welcome');
                 }
-                
-                const index = answers[questionId].indexOf(option);
-                if (index > -1) {
-                    answers[questionId].splice(index, 1);
-                } else {
-                    answers[questionId].push(option);
+            };
+
+            // ---------- HISTORY (calendar, search, download) ----------
+            const historyMgmt = {
+                renderCalendar() {
+                    const container = document.getElementById('calContainer');
+                    container.innerHTML = '';
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = now.getMonth();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    const firstDay = new Date(year, month, 1).getDay();
+                    const todayStr = helpers.getLocalDay();
+
+                    const dow = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+                    dow.forEach(d => {
+                        const h = document.createElement('div');
+                        h.className = 'cal-day-header';
+                        h.textContent = d;
+                        container.appendChild(h);
+                    });
+
+                    for (let i = 0; i < firstDay; i++) container.appendChild(document.createElement('div'));
+
+                    for (let d = 1; d <= daysInMonth; d++) {
+                        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                        const logs = state.history[dateStr] || [];
+                        let dayClass = '';
+                        if (logs.length > 0) {
+                            const completedCtx = new Set(logs.map(l => l.ctx));
+                            const allDone = state.contexts.length > 0 && state.contexts.every(ctx => completedCtx.has(ctx.id));
+                            dayClass = allDone ? 'completed' : 'partial';
+                        }
+                        const isToday = dateStr === todayStr ? 'today' : '';
+                        const cell = document.createElement('div');
+                        cell.className = `cal-d ${dayClass} ${isToday}`;
+                        cell.textContent = d;
+                        cell.setAttribute('role', 'button');
+                        cell.tabIndex = 0;
+                        cell.addEventListener('click', () => this.viewDay(dateStr));
+                        cell.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                this.viewDay(dateStr);
+                            }
+                        });
+                        container.appendChild(cell);
+                    }
+                },
+
+                viewDay(date) {
+                    const logs = state.history[date] || [];
+                    const detail = document.getElementById('dayDetail');
+                    if (logs.length === 0) {
+                        detail.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-soft);">📭 no logs for this day</div>';
+                        return;
+                    }
+                    document.getElementById('historySearch').value = '';
+                    let html = '';
+                    const groups = {};
+                    logs.forEach((log, idx) => {
+                        if (!groups[log.ctx]) groups[log.ctx] = [];
+                        groups[log.ctx].push({ log, idx });
+                    });
+                    Object.entries(groups).forEach(([ctxId, entries]) => {
+                        const ctx = state.contexts.find(c => c.id === ctxId) || { l: ctxId, i: '❓' };
+                        html += `<div style="margin-bottom:24px;"><div style="font-weight:800; margin-bottom:12px;">${ctx.i} ${ctx.l}</div>`;
+                        entries.forEach(({ log, idx }) => {
+                            html += `<div class="history-card" data-date="${date}" data-index="${idx}">`;
+                            html += `<button class="log-delete-btn" onclick="history.deleteEntry('${date}', ${idx})" aria-label="Delete">✕</button>`;
+                            html += `<div class="log-header"><span>${ctx.i} ${ctx.l}</span><span>${log.time}</span></div>`;
+                            Object.entries(log.ans).forEach(([qId, val]) => {
+                                const q = state.questions.find(qq => qq.id === qId);
+                                if (!q) return;
+                                const display = Array.isArray(val) ? val.join(', ') : (q.t === 'toggle' ? (val ? 'Yes' : 'No') : val);
+                                html += `<div class="log-answer"><div class="log-question">${helpers.escape(q.l)}</div><div class="log-value">${helpers.escape(display) || '—'}</div></div>`;
+                            });
+                            html += '</div>';
+                        });
+                        html += '</div>';
+                    });
+                    detail.innerHTML = html;
+                },
+
+                renderList() {
+                    const search = document.getElementById('historySearch').value.toLowerCase().trim();
+                    const detail = document.getElementById('dayDetail');
+                    const cal = document.getElementById('calContainer');
+                    if (!search) {
+                        cal.style.display = 'grid';
+                        detail.innerHTML = '';
+                        return;
+                    }
+                    cal.style.display = 'none';
+
+                    let results = [];
+                    Object.keys(state.history).sort((a, b) => new Date(b) - new Date(a)).forEach(date => {
+                        state.history[date].forEach((log, idx) => {
+                            const ctx = state.contexts.find(c => c.id === log.ctx);
+                            const ctxName = ctx ? ctx.l.toLowerCase() : '';
+                            const answersText = JSON.stringify(log.ans).toLowerCase();
+                            if (ctxName.includes(search) || answersText.includes(search) || date.includes(search)) {
+                                results.push({ date, log, idx });
+                            }
+                        });
+                    });
+
+                    if (results.length === 0) {
+                        detail.innerHTML = '<div style="text-align:center; padding:40px;">🔍 no matches</div>';
+                        return;
+                    }
+
+                    let html = `<div><div style="font-size:14px; color:var(--text-soft); margin-bottom:16px;">${results.length} result(s) for "${helpers.escape(search)}"</div>`;
+                    const grouped = {};
+                    results.forEach(r => {
+                        if (!grouped[r.date]) grouped[r.date] = [];
+                        grouped[r.date].push(r);
+                    });
+                    Object.entries(grouped).sort((a, b) => new Date(b[0]) - new Date(a[0])).forEach(([date, entries]) => {
+                        html += `<div style="font-weight:800; margin:20px 0 12px;">${helpers.formatDate(date)}</div>`;
+                        entries.forEach(({ log, idx }) => {
+                            const ctx = state.contexts.find(c => c.id === log.ctx) || { l: log.ctx, i: '❓' };
+                            html += `<div class="history-card" data-date="${date}" data-index="${idx}">`;
+                            html += `<button class="log-delete-btn" onclick="history.deleteEntry('${date}', ${idx})">✕</button>`;
+                            html += `<div class="log-header"><span>${ctx.i} ${ctx.l}</span><span>${log.time}</span></div>`;
+                            Object.entries(log.ans).forEach(([qId, val]) => {
+                                const q = state.questions.find(qq => qq.id === qId);
+                                if (!q) return;
+                                const display = Array.isArray(val) ? val.join(', ') : (q.t === 'toggle' ? (val ? 'Yes' : 'No') : val);
+                                html += `<div class="log-answer"><div class="log-question">${helpers.escape(q.l)}</div><div class="log-value">${helpers.escape(display) || '—'}</div></div>`;
+                            });
+                            html += '</div>';
+                        });
+                    });
+                    html += '</div>';
+                    detail.innerHTML = html;
+                },
+
+                deleteEntry(date, index) {
+                    modal.show('Delete entry', 'Permanently remove this log?', () => {
+                        state.history[date].splice(index, 1);
+                        if (state.history[date].length === 0) delete state.history[date];
+                        helpers.persist(STORAGE.HISTORY, state.history);
+                        this.renderCalendar();
+                        this.viewDay(date);
+                        if (date === helpers.getLocalDay()) {
+                            ui.renderChips();
+                            ui.renderWelcomeGrid();
+                        }
+                    });
+                },
+
+                downloadDay(date) {
+                    const logs = state.history[date];
+                    if (!logs || logs.length === 0) return;
+                    let content = `SKELETON LOG — ${helpers.formatDate(date)}\n========================\n\n`;
+                    const groups = {};
+                    logs.forEach(log => {
+                        if (!groups[log.ctx]) groups[log.ctx] = [];
+                        groups[log.ctx].push(log);
+                    });
+                    Object.entries(groups).forEach(([ctxId, ctxLogs]) => {
+                        const ctx = state.contexts.find(c => c.id === ctxId) || { l: ctxId };
+                        content += `${ctx.l.toUpperCase()}\n${'-'.repeat(ctx.l.length)}\n`;
+                        ctxLogs.forEach((log, i) => {
+                            content += `\n[Session ${i + 1} at ${log.time}]\n`;
+                            Object.entries(log.ans).forEach(([qId, val]) => {
+                                const q = state.questions.find(qq => qq.id === qId);
+                                if (!q) return;
+                                const display = Array.isArray(val) ? val.join(', ') : (q.t === 'toggle' ? (val ? 'Yes' : 'No') : val);
+                                content += ` • ${q.l}: ${display}\n`;
+                            });
+                        });
+                        content += '\n';
+                    });
+                    const blob = new Blob([content], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `skeleton_${date}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }, 100);
                 }
-            }
-            
-            // Re-render to update active states
-            renderCurrentQuestion();
-        }
+            };
 
-        // Capture current answer before moving
-        function captureCurrentAnswer() {
-            if (currentQuestionIndex >= filteredQuestions.length) return;
-            
-            const question = filteredQuestions[currentQuestionIndex];
-            const inputElement = document.getElementById(`input-${question.id}`);
-            
-            if (!inputElement) {
-                // For select/multi questions, answers are already captured on selection
-                return;
-            }
-            
-            switch(question.t) {
-                case 'toggle':
-                    answers[question.id] = inputElement.checked;
-                    break;
-                case 'range':
-                    answers[question.id] = parseFloat(inputElement.value).toFixed(1);
-                    break;
-                default:
-                    answers[question.id] = inputElement.value.trim();
-            }
-        }
+            // ---------- CONFIG EDITOR (contexts + questions) ----------
+            const config = {
+                render() {
+                    this.renderContexts();
+                    this.renderQuestions();
+                },
 
-        // Handle next button click
-        function handleNext() {
-            captureCurrentAnswer();
-            moveToNextQuestion();
-        }
-
-        // Handle skip button click
-        function handleSkip() {
-            // Don't capture answer when skipping
-            moveToNextQuestion();
-        }
-
-        // Move to next question or finish
-        function moveToNextQuestion() {
-            if (currentQuestionIndex < filteredQuestions.length - 1) {
-                currentQuestionIndex++;
-                renderCurrentQuestion();
-            } else {
-                saveToHistory();
-            }
-        }
-
-        // Handle back button click
-        function handleBack() {
-            captureCurrentAnswer();
-            if (currentQuestionIndex > 0) {
-                currentQuestionIndex--;
-                renderCurrentQuestion();
-            }
-        }
-
-        // Save answers to history
-        function saveToHistory() {
-            const today = getLocalDay();
-            const currentTime = new Date().toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit',
-                hour12: false
-            });
-            
-            // Initialize today's logs if needed
-            if (!history[today]) {
-                history[today] = [];
-            }
-            
-            // Add new log entry
-            history[today].push({
-                ctx: activeContext,
-                time: currentTime,
-                ans: {...answers}
-            });
-            
-            // Save to localStorage
-            localStorage.setItem(LOCAL_STORAGE_KEYS.HISTORY, JSON.stringify(history));
-            
-            // Show summary view
-            showSummaryView();
-        }
-
-        // Show summary of logged answers
-        function showSummaryView() {
-            const summaryList = document.getElementById('summList');
-            summaryList.innerHTML = '';
-            
-            filteredQuestions.forEach(question => {
-                const answer = answers[question.id];
-                if (answer === undefined && question.t !== 'toggle') return;
-                
-                const item = document.createElement('div');
-                item.className = 'summary-item';
-                
-                const label = document.createElement('span');
-                label.className = 'summary-label';
-                label.textContent = question.l;
-                
-                const value = document.createElement('div');
-                value.className = 'summary-value';
-                
-                // Format answer display
-                if (Array.isArray(answer)) {
-                    value.textContent = answer.join(', ');
-                } else if (question.t === 'toggle') {
-                    value.textContent = answer ? 'Yes' : 'No';
-                } else {
-                    value.textContent = answer || 'Skipped';
-                }
-                
-                item.appendChild(label);
-                item.appendChild(value);
-                summaryList.appendChild(item);
-            });
-            
-            showView('summary');
-        }
-
-        // Sync UI state to data models (for editor)
-        function syncUItoState() {
-            // Sync contexts
-            contexts.forEach((context, index) => {
-                const iconInput = document.getElementById(`ctx-icon-${index}`);
-                const labelInput = document.getElementById(`ctx-label-${index}`);
-                
-                if (iconInput) context.i = iconInput.value;
-                if (labelInput) context.l = labelInput.value;
-            });
-            
-            // Sync questions
-            questions.forEach((question, index) => {
-                const labelInput = document.getElementById(`q-label-${index}`);
-                const typeSelect = document.getElementById(`q-type-${index}`);
-                const optionsInput = document.getElementById(`q-options-${index}`);
-                
-                if (labelInput) question.l = labelInput.value;
-                if (typeSelect) question.t = typeSelect.value;
-                if (optionsInput) question.o = optionsInput.value;
-            });
-        }
-
-        // Move context in order
-        function moveContext(index, direction) {
-            syncUItoState();
-            const targetIndex = index + direction;
-            
-            if (targetIndex < 0 || targetIndex >= contexts.length) return;
-            
-            // Swap contexts
-            [contexts[index], contexts[targetIndex]] = [contexts[targetIndex], contexts[index]];
-            renderEditor();
-        }
-
-        // Move question in order
-        function moveQuestion(index, direction) {
-            syncUItoState();
-            const targetIndex = index + direction;
-            
-            if (targetIndex < 0 || targetIndex >= questions.length) return;
-            
-            // Swap questions
-            [questions[index], questions[targetIndex]] = [questions[targetIndex], questions[index]];
-            renderEditor();
-        }
-
-        // Render editor views
-        function renderEditor() {
-            renderContextEditor();
-            renderQuestionEditor();
-        }
-
-        // Render context editor section
-        function renderContextEditor() {
-            const container = document.getElementById('ctxEditList');
-            container.innerHTML = `
-                <div style="display:flex; justify-content:space-between; margin:24px 0 16px;">
-                    <b class="editor-section-title">CONTEXT TABS</b>
-                    <button onclick="addContext()" class="editor-add-btn" aria-label="Add new context">+ ADD</button>
-                </div>
-            `;
-            
-            contexts.forEach((context, index) => {
-                const contextElement = document.createElement('div');
-                contextElement.className = 'edit-row';
-                contextElement.innerHTML = `
-                    <div style="display:flex; gap:14px; align-items:center;">
-                        <input 
-                            type="text" 
-                            class="editor-icon-input" 
-                            id="ctx-icon-${index}" 
-                            value="${escapeHtml(context.i)}" 
-                            aria-label="Context icon for ${escapeHtml(context.l)}"
-                            maxlength="2">
-                        <input 
-                            type="text" 
-                            class="editor-label-input" 
-                            id="ctx-label-${index}" 
-                            value="${escapeHtml(context.l)}" 
-                            aria-label="Context label"
-                            placeholder="Context name">
-                        <div class="editor-order-controls">
-                            <button 
-                                onclick="moveContext(${index}, -1)" 
-                                class="order-btn" 
-                                ${index === 0 ? 'disabled' : ''}
-                                aria-label="Move context up">
-                                ↑
-                            </button>
-                            <button 
-                                onclick="moveContext(${index}, 1)" 
-                                class="order-btn" 
-                                ${index === contexts.length - 1 ? 'disabled' : ''}
-                                aria-label="Move context down">
-                                ↓
-                            </button>
-                            <button 
-                                onclick="deleteContext(${index})" 
-                                class="editor-delete-btn" 
-                                aria-label="Delete context ${escapeHtml(context.l)}">
-                                ✕
-                            </button>
+                renderContexts() {
+                    const container = document.getElementById('ctxEditList');
+                    container.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; margin:24px 0 16px;">
+                            <b class="editor-section-title">📌 CONTEXT TABS</b>
+                            <button class="editor-add-btn" onclick="config.addContext()">+ ADD</button>
                         </div>
-                    </div>
-                `;
-                container.appendChild(contextElement);
-            });
-        }
-
-        // Render question editor section
-        function renderQuestionEditor() {
-            const container = document.getElementById('qEditList');
-            container.innerHTML = `
-                <div style="display:flex; justify-content:space-between; margin:24px 0 16px;">
-                    <b class="editor-section-title">LOGGING PROMPTS</b>
-                    <button onclick="addQuestion()" class="editor-add-btn" aria-label="Add new question">+ ADD</button>
-                </div>
-            `;
-            
-            questions.forEach((question, index) => {
-                const questionElement = document.createElement('div');
-                questionElement.className = 'edit-row';
-                
-                // Build context selector pills
-                const contextPills = contexts.map(context => {
-                    const isActive = question.c.includes(context.id);
-                    return `
-                        <span class="ctx-pill ${isActive ? 'on' : ''}" 
-                              onclick="toggleQuestionContext(${index}, '${context.id}')" 
-                              role="checkbox"
-                              aria-checked="${isActive}"
-                              tabindex="0"
-                              aria-label="${isActive ? 'Remove' : 'Add'} context ${context.l}">
-                            ${context.i} ${context.l}
-                        </span>
                     `;
-                }).join('');
-                
-                // Build type selector
-                const typeOptions = `
-                    <option value="toggle" ${question.t === 'toggle' ? 'selected' : ''}>TOGGLE</option>
-                    <option value="select" ${question.t === 'select' ? 'selected' : ''}>CHOOSE ONE</option>
-                    <option value="multi" ${question.t === 'multi' ? 'selected' : ''}>CHOOSE MANY</option>
-                    <option value="time" ${question.t === 'time' ? 'selected' : ''}>TIME</option>
-                    <option value="range" ${question.t === 'range' ? 'selected' : ''}>RANGE (0-10)</option>
-                    <option value="text" ${question.t === 'text' ? 'selected' : ''}>SHORT TEXT</option>
-                    <option value="textarea" ${question.t === 'textarea' ? 'selected' : ''}>LONG TEXT</option>
-                `;
-                
-                questionElement.innerHTML = `
-                    <div style="margin-bottom:16px;">
-                        <input 
-                            type="text" 
-                            class="editor-question-input" 
-                            id="q-label-${index}" 
-                            value="${escapeHtml(question.l)}" 
-                            aria-label="Question text"
-                            placeholder="Question text">
-                        <div class="editor-order-controls" style="margin-top:8px;">
-                            <button 
-                                onclick="moveQuestion(${index}, -1)" 
-                                class="order-btn" 
-                                ${index === 0 ? 'disabled' : ''}
-                                aria-label="Move question up">
-                                ↑
-                            </button>
-                            <button 
-                                onclick="moveQuestion(${index}, 1)" 
-                                class="order-btn" 
-                                ${index === questions.length - 1 ? 'disabled' : ''}
-                                aria-label="Move question down">
-                                ↓
-                            </button>
-                        </div>
-                    </div>
-                    <div style="margin-bottom:16px;">
-                        <div style="font-size:12px; font-weight:700; color:var(--sub); margin-bottom:8px;">APPEARS IN CONTEXTS:</div>
-                        <div style="display:flex; flex-wrap:wrap; gap:8px;">
-                            ${contextPills}
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
-                        <select 
-                            id="q-type-${index}" 
-                            class="editor-type-select" 
-                            aria-label="Question type"
-                            onchange="syncUItoState(); renderEditor()">
-                            ${typeOptions}
-                        </select>
-                        <button 
-                            onclick="deleteQuestion(${index})" 
-                            class="editor-delete-btn" 
-                            aria-label="Delete question">
-                            DELETE QUESTION
-                        </button>
-                    </div>
-                    ${(question.t === 'select' || question.t === 'multi') ? `
-                        <div>
-                            <div style="font-size:12px; font-weight:700; color:var(--sub); margin-bottom:6px;">OPTIONS (comma separated):</div>
-                            <input 
-                                type="text" 
-                                id="q-options-${index}" 
-                                class="editor-options-input" 
-                                value="${escapeHtml(question.o || '')}" 
-                                aria-label="Question options"
-                                placeholder="Option 1, Option 2, Option 3">
-                        </div>
-                    ` : ''}
-                `;
-                
-                container.appendChild(questionElement);
-            });
-        }
-
-        // Toggle question context association
-        function toggleQuestionContext(questionIndex, contextId) {
-            syncUItoState();
-            const question = questions[questionIndex];
-            
-            if (question.c.includes(contextId)) {
-                question.c = question.c.filter(id => id !== contextId);
-            } else {
-                question.c.push(contextId);
-            }
-            
-            renderEditor();
-        }
-
-        // Add new context
-        function addContext() {
-            syncUItoState();
-            const newId = `ctx_${Date.now()}`;
-            contexts.push({
-                id: newId,
-                l: 'New Context',
-                i: '🏷️'
-            });
-            renderEditor();
-            
-            // Scroll to bottom
-            setTimeout(() => {
-                document.querySelector('.scroll').scrollTop = document.querySelector('.scroll').scrollHeight;
-            }, 100);
-        }
-
-        // Delete context with confirmation
-        function deleteContext(index) {
-            const context = contexts[index];
-            showModal(
-                "Delete Context", 
-                `Are you sure you want to delete "${context.l}"? This will remove it from all questions.`,
-                () => {
-                    // Remove context from all questions
-                    questions.forEach(question => {
-                        question.c = question.c.filter(c => c !== context.id);
+                    state.contexts.forEach((ctx, idx) => {
+                        const row = document.createElement('div');
+                        row.className = 'edit-row';
+                        row.innerHTML = `
+                            <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
+                                <input type="text" class="editor-icon-input" id="ctx-icon-${idx}" value="${helpers.escape(ctx.i)}" maxlength="2">
+                                <input type="text" class="editor-label-input" id="ctx-label-${idx}" value="${helpers.escape(ctx.l)}" placeholder="Name">
+                                <div class="editor-order-controls">
+                                    <button class="order-btn" onclick="config.moveContext(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>↑</button>
+                                    <button class="order-btn" onclick="config.moveContext(${idx}, 1)" ${idx === state.contexts.length - 1 ? 'disabled' : ''}>↓</button>
+                                    <button class="editor-delete-btn" onclick="config.deleteContext(${idx})">✕</button>
+                                </div>
+                            </div>
+                        `;
+                        container.appendChild(row);
                     });
-                    
-                    // Remove the context
-                    contexts.splice(index, 1);
-                    
-                    // Re-render editor
-                    renderEditor();
-                    
-                    // If this was the active context, reset
-                    if (activeContext === context.id) {
-                        activeContext = '';
-                        showView('welcome');
-                        renderChips();
-                    }
-                }
-            );
-        }
+                },
 
-        // Add new question
-        function addQuestion() {
-            syncUItoState();
-            const newId = `q_${Date.now()}`;
-            questions.push({
-                id: newId,
-                c: [],
-                l: 'New Question?',
-                t: 'toggle',
-                d: false,
-                o: ''
-            });
-            renderEditor();
-            
-            // Scroll to bottom
-            setTimeout(() => {
-                document.querySelector('.scroll').scrollTop = document.querySelector('.scroll').scrollHeight;
-            }, 100);
-        }
-
-        // Delete question with confirmation
-        function deleteQuestion(index) {
-            showModal(
-                "Delete Question", 
-                "Are you sure you want to delete this question? This action cannot be undone.",
-                () => {
-                    questions.splice(index, 1);
-                    renderEditor();
-                }
-            );
-        }
-
-        // Save configuration changes
-        function saveConfig() {
-            syncUItoState();
-            
-            // Validate contexts
-            if (contexts.length === 0) {
-                showModal("Validation Error", "You must have at least one context tab.");
-                return;
-            }
-            
-            // Validate questions
-            if (questions.length === 0) {
-                showModal("Validation Error", "You must have at least one question.");
-                return;
-            }
-            
-            // Save to localStorage
-            localStorage.setItem(LOCAL_STORAGE_KEYS.CONTEXTS, JSON.stringify(contexts));
-            localStorage.setItem(LOCAL_STORAGE_KEYS.QUESTIONS, JSON.stringify(questions));
-            
-            // Show success message
-            showModal("Success", "Configuration saved successfully! Page will reload to apply changes.", () => {
-                location.reload();
-            });
-        }
-
-        // Render calendar for history view
-        function renderCalendar() {
-            const container = document.getElementById('calContainer');
-            container.innerHTML = '';
-            
-            const now = new Date();
-            const currentYear = now.getFullYear();
-            const currentMonth = now.getMonth();
-            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-            const todayStr = getLocalDay();
-            
-            // Add day headers (Su, Mo, Tu, etc.)
-            const daysOfWeek = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-            daysOfWeek.forEach(day => {
-                const dayHeader = document.createElement('div');
-                dayHeader.className = 'cal-day-header';
-                dayHeader.style.fontWeight = '700';
-                dayHeader.style.fontSize = '12px';
-                dayHeader.style.color = 'var(--sub)';
-                dayHeader.textContent = day;
-                container.appendChild(dayHeader);
-            });
-            
-            // Get first day of month
-            const firstDay = new Date(currentYear, currentMonth, 1);
-            const startDayIndex = firstDay.getDay(); // 0 = Sunday
-            
-            // Add empty cells for days before start of month
-            for (let i = 0; i < startDayIndex; i++) {
-                container.appendChild(document.createElement('div'));
-            }
-            
-            // Add days of month
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const hasLogs = history[dateStr] && history[dateStr].length > 0;
-                const isToday = dateStr === todayStr;
-                
-                const dayElement = document.createElement('div');
-                dayElement.className = `cal-d ${hasLogs ? 'has' : ''} ${isToday ? 'today' : ''}`;
-                dayElement.textContent = day;
-                dayElement.setAttribute('aria-label', `View logs for ${dateStr}`);
-                dayElement.setAttribute('role', 'button');
-                dayElement.tabIndex = 0;
-                
-                dayElement.addEventListener('click', () => viewDay(dateStr));
-                dayElement.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        viewDay(dateStr);
-                    }
-                });
-                
-                container.appendChild(dayElement);
-            }
-        }
-
-        // View logs for a specific day
-        function viewDay(date) {
-            const logs = history[date] || [];
-            const detailContainer = document.getElementById('dayDetail');
-            
-            if (logs.length === 0) {
-                detailContainer.innerHTML = `
-                    <div style="text-align:center; padding:30px; color:var(--sub);">
-                        <div style="font-size:48px; margin-bottom:16px;">📭</div>
-                        <p>No logs found for ${formatDate(date)}</p>
-                        <p style="font-size:14px; margin-top:8px; opacity:0.8;">Start logging by selecting a context above</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Clear search when viewing a day
-            document.getElementById('historySearch').value = '';
-            
-            // Render logs
-            detailContainer.innerHTML = logs.map((log, index) => {
-                const context = contexts.find(c => c.id === log.ctx) || {l: log.ctx, i: '❓'};
-                return createLogEntryHTML(date, log, context, index);
-            }).join('');
-            
-            // Scroll to top
-            detailContainer.scrollTop = 0;
-        }
-
-        // Create HTML for a log entry
-        function createLogEntryHTML(date, log, context, index) {
-            // Format answers
-            const answersHTML = Object.entries(log.ans).map(([qId, value]) => {
-                const question = questions.find(q => q.id === qId);
-                if (!question) return '';
-                
-                // Format value based on question type
-                let displayValue = value;
-                if (Array.isArray(value)) {
-                    displayValue = value.join(', ');
-                } else if (question.t === 'toggle') {
-                    displayValue = value ? 'Yes' : 'No';
-                } else if (question.t === 'range') {
-                    displayValue = parseFloat(value).toFixed(1);
-                }
-                
-                return `
-                    <div class="log-answer">
-                        <div class="log-question">${escapeHtml(question.l)}</div>
-                        <div class="log-value">${escapeHtml(displayValue)}</div>
-                    </div>
-                `;
-            }).filter(html => html).join('');
-            
-            return `
-                <div class="history-card">
-                    <button 
-                        onclick="deleteLogEntry('${date}', ${index})" 
-                        class="log-delete-btn" 
-                        aria-label="Delete this log entry">
-                        ✕
-                    </button>
-                    <div class="log-header">
-                        <span class="log-context" style="color:var(--p);">${context.i} ${context.l.toUpperCase()}</span>
-                        <span class="log-time">${log.time}</span>
-                    </div>
-                    <div class="log-answers">
-                        ${answersHTML}
-                    </div>
-                </div>
-            `;
-        }
-
-        // Delete a log entry
-        function deleteLogEntry(date, index) {
-            showModal(
-                "Delete Log Entry", 
-                "Are you sure you want to delete this log entry? This action cannot be undone.",
-                () => {
-                    history[date].splice(index, 1);
-                    
-                    // Remove empty days
-                    if (history[date].length === 0) {
-                        delete history[date];
-                    }
-                    
-                    // Save changes
-                    localStorage.setItem(LOCAL_STORAGE_KEYS.HISTORY, JSON.stringify(history));
-                    
-                    // Re-render
-                    renderCalendar();
-                    viewDay(date);
-                }
-            );
-        }
-
-        // Render history list based on search
-        function renderHistoryList() {
-            const searchTerm = document.getElementById('historySearch').value.toLowerCase().trim();
-            const detailContainer = document.getElementById('dayDetail');
-            
-            // Show calendar if no search term
-            if (!searchTerm) {
-                renderCalendar();
-                detailContainer.innerHTML = '';
-                return;
-            }
-            
-            // Hide calendar when searching
-            document.getElementById('calContainer').style.display = 'none';
-            
-            // Search through history
-            let results = [];
-            let resultCount = 0;
-            
-            // Search from most recent to oldest
-            Object.keys(history).sort((a, b) => new Date(b) - new Date(a)).forEach(date => {
-                history[date].forEach((log, logIndex) => {
-                    // Check context name
-                    const context = contexts.find(c => c.id === log.ctx);
-                    const contextName = context ? context.l.toLowerCase() : '';
-                    
-                    // Check answers
-                    const answersText = JSON.stringify(log.ans).toLowerCase();
-                    
-                    // Check if matches search term
-                    if (contextName.includes(searchTerm) || 
-                        answersText.includes(searchTerm) || 
-                        date.includes(searchTerm)) {
-                        
-                        const formattedDate = formatDate(date);
-                        results.push({date, log, logIndex, formattedDate});
-                        resultCount++;
-                    }
-                });
-            });
-            
-            // Display results
-            if (resultCount === 0) {
-                detailContainer.innerHTML = `
-                    <div style="text-align:center; padding:40px 20px; color:var(--sub);">
-                        <div style="font-size:48px; margin-bottom:16px;">🔍</div>
-                        <p>No entries match your search</p>
-                        <p style="font-size:14px; margin-top:8px; opacity:0.8;">Try different keywords or check your spelling</p>
-                    </div>
-                `;
-            } else {
-                // Group results by date
-                const groupedResults = {};
-                results.forEach(result => {
-                    if (!groupedResults[result.date]) {
-                        groupedResults[result.date] = [];
-                    }
-                    groupedResults[result.date].push(result);
-                });
-                
-                // Render results
-                let html = `<div style="padding-bottom:20px"><div style="font-size:14px; font-weight:700; color:var(--sub); margin-bottom:12px;">Found ${resultCount} result${resultCount > 1 ? 's' : ''} for "${escapeHtml(searchTerm)}"</div>`;
-                
-                Object.entries(groupedResults).sort((a, b) => new Date(b[0]) - new Date(a[0])).forEach(([date, logs]) => {
-                    html += `<div class="search-date-header">${formatDate(date)}</div>`;
-                    logs.forEach(result => {
-                        const context = contexts.find(c => c.id === result.log.ctx) || {l: result.log.ctx, i: '❓'};
-                        html += createLogEntryHTML(date, result.log, context, result.logIndex);
+                renderQuestions() {
+                    const container = document.getElementById('qEditList');
+                    container.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; margin:24px 0 16px;">
+                            <b class="editor-section-title">❓ PROMPTS</b>
+                            <button class="editor-add-btn" onclick="config.addQuestion()">+ ADD</button>
+                        </div>
+                    `;
+                    state.questions.forEach((q, idx) => {
+                        const row = document.createElement('div');
+                        row.className = 'edit-row';
+                        const ctxPills = state.contexts.map(ctx => {
+                            const active = q.c.includes(ctx.id);
+                            return `<span class="ctx-pill ${active ? 'on' : ''}" onclick="config.toggleQuestionCtx(${idx}, '${ctx.id}')">${ctx.i} ${ctx.l}</span>`;
+                        }).join('');
+                        const typeOptions = ['toggle', 'select', 'multi', 'time', 'range', 'text', 'textarea'].map(t => 
+                            `<option value="${t}" ${q.t === t ? 'selected' : ''}>${t.toUpperCase()}</option>`
+                        ).join('');
+                        row.innerHTML = `
+                            <div style="margin-bottom:16px;">
+                                <input type="text" class="editor-label-input" id="q-label-${idx}" value="${helpers.escape(q.l)}" placeholder="Question text" style="width:100%; margin-bottom:10px;">
+                                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                    <button class="order-btn" onclick="config.moveQuestion(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>↑</button>
+                                    <button class="order-btn" onclick="config.moveQuestion(${idx}, 1)" ${idx === state.questions.length - 1 ? 'disabled' : ''}>↓</button>
+                                </div>
+                            </div>
+                            <div style="margin-bottom:16px;">
+                                <div style="font-size:12px; font-weight:700; color:var(--text-soft); margin-bottom:8px;">APPEARS IN:</div>
+                                <div style="display:flex; flex-wrap:wrap; gap:8px;">${ctxPills}</div>
+                            </div>
+                            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+                                <select id="q-type-${idx}" class="editor-type-select" style="flex:1;">${typeOptions}</select>
+                                <button class="editor-delete-btn" onclick="config.deleteQuestion(${idx})">DELETE</button>
+                            </div>
+                            ${(q.t === 'select' || q.t === 'multi') ? `
+                                <div>
+                                    <div style="font-size:12px; font-weight:700; color:var(--text-soft); margin-bottom:6px;">OPTIONS (comma separated):</div>
+                                    <input type="text" id="q-options-${idx}" class="editor-options-input" value="${helpers.escape(q.o || '')}">
+                                </div>
+                            ` : ''}
+                        `;
+                        container.appendChild(row);
                     });
-                });
-                
-                html += '</div>';
-                detailContainer.innerHTML = html;
-                
-                // Add delete button functionality
-                document.querySelectorAll('.log-delete-btn').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const date = e.target.closest('.history-card').dataset.date;
-                        const index = e.target.closest('.history-card').dataset.index;
-                        deleteLogEntry(date, index);
+                },
+
+                sync() {
+                    // sync contexts
+                    state.contexts.forEach((ctx, idx) => {
+                        const icon = document.getElementById(`ctx-icon-${idx}`);
+                        const label = document.getElementById(`ctx-label-${idx}`);
+                        if (icon) ctx.i = icon.value;
+                        if (label) ctx.l = label.value;
                     });
-                });
-            }
-            
-            // Scroll to top
-            detailContainer.scrollTop = 0;
-        }
+                    // sync questions
+                    state.questions.forEach((q, idx) => {
+                        const label = document.getElementById(`q-label-${idx}`);
+                        const type = document.getElementById(`q-type-${idx}`);
+                        const opts = document.getElementById(`q-options-${idx}`);
+                        if (label) q.l = label.value;
+                        if (type) q.t = type.value;
+                        if (opts) q.o = opts.value;
+                    });
+                },
 
-        // Format date as "Month Day, Year"
-        function formatDate(dateStr) {
-            const [year, month, day] = dateStr.split('-');
-            const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-            return date.toLocaleDateString(undefined, { 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric' 
-            });
-        }
+                moveContext(idx, dir) {
+                    this.sync();
+                    const target = idx + dir;
+                    if (target < 0 || target >= state.contexts.length) return;
+                    [state.contexts[idx], state.contexts[target]] = [state.contexts[target], state.contexts[idx]];
+                    this.render();
+                    ui.renderChips();
+                    ui.renderWelcomeGrid();
+                },
 
-        // Download day's logs as text file
-        function dlDay(date) {
-            const logs = history[date];
-            if (!logs || logs.length === 0) return;
-            
-            let content = `SKELETON LOGGER — ${formatDate(date)}\n`;
-            content += `========================\n\n`;
-            
-            logs.forEach(log => {
-                const context = contexts.find(c => c.id === log.ctx) || {l: log.ctx};
-                content += `[${log.time}] ${context.l.toUpperCase()}\n`;
-                
-                Object.entries(log.ans).forEach(([qId, value]) => {
-                    const question = questions.find(q => q.id === qId);
-                    if (!question) return;
-                    
-                    // Format value
-                    let displayValue = value;
-                    if (Array.isArray(value)) {
-                        displayValue = value.join(', ');
-                    } else if (question.t === 'toggle') {
-                        displayValue = value ? 'Yes' : 'No';
+                moveQuestion(idx, dir) {
+                    this.sync();
+                    const target = idx + dir;
+                    if (target < 0 || target >= state.questions.length) return;
+                    [state.questions[idx], state.questions[target]] = [state.questions[target], state.questions[idx]];
+                    this.render();
+                },
+
+                toggleQuestionCtx(qIdx, ctxId) {
+                    this.sync();
+                    const q = state.questions[qIdx];
+                    if (q.c.includes(ctxId)) {
+                        q.c = q.c.filter(id => id !== ctxId);
+                    } else {
+                        q.c.push(ctxId);
                     }
-                    
-                    content += ` • ${question.l}: ${displayValue}\n`;
-                });
-                
-                content += '\n';
-            });
-            
-            // Create download
-            const blob = new Blob([content], {type: 'text/plain'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `skeleton_log_${date}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 0);
-        }
+                    this.render();
+                },
 
-        // Show modal dialog
-        function showModal(title, body, onConfirm) {
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalBody').textContent = body;
-            
-            const modal = document.getElementById('customModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('active');
-            
-            // Set up confirm callback
-            if (onConfirm) {
-                window.modalConfirmCallback = onConfirm;
-            } else {
-                window.modalConfirmCallback = null;
+                addContext() {
+                    this.sync();
+                    const newId = `ctx_${Date.now()}`;
+                    state.contexts.push({ id: newId, l: 'New Tab', i: '📌' });
+                    this.render();
+                    ui.renderChips();
+                    ui.renderWelcomeGrid();
+                    document.querySelector('#setupScroll').scrollTop = 9999;
+                },
+
+                deleteContext(idx) {
+                    const ctx = state.contexts[idx];
+                    modal.show('Delete tab', `Remove "${ctx.l}" from all questions?`, () => {
+                        state.questions.forEach(q => {
+                            q.c = q.c.filter(id => id !== ctx.id);
+                        });
+                        const today = helpers.getLocalDay();
+                        const key = `${today}_${ctx.id}`;
+                        if (state.progress[key]) delete state.progress[key];
+                        helpers.persist(STORAGE.PROGRESS, state.progress);
+                        state.contexts.splice(idx, 1);
+                        this.render();
+                        ui.renderChips();
+                        ui.renderWelcomeGrid();
+                        if (state.activeContext === ctx.id) {
+                            state.activeContext = '';
+                            ui.showView('welcome');
+                        }
+                    });
+                },
+
+                addQuestion() {
+                    this.sync();
+                    const newId = `q_${Date.now()}`;
+                    state.questions.push({ id: newId, c: [], l: 'New question?', t: 'toggle', d: false, o: '' });
+                    this.render();
+                    document.querySelector('#setupScroll').scrollTop = 9999;
+                },
+
+                deleteQuestion(idx) {
+                    modal.show('Delete prompt', 'Remove this question?', () => {
+                        state.questions.splice(idx, 1);
+                        this.render();
+                    });
+                },
+
+                saveAll() {
+                    this.sync();
+                    if (state.contexts.length === 0) {
+                        modal.show('Error', 'At least one context tab required.');
+                        return;
+                    }
+                    if (state.questions.length === 0) {
+                        modal.show('Error', 'At least one prompt required.');
+                        return;
+                    }
+                    helpers.persist(STORAGE.CONTEXTS, state.contexts);
+                    helpers.persist(STORAGE.QUESTIONS, state.questions);
+                    modal.show('Saved', 'Configuration stored. Reload to apply.', () => location.reload());
+                }
+            };
+
+            // ---------- WELCOME (grid) alias ----------
+            const welcome = {
+                renderGrid: ui.renderWelcomeGrid
+            };
+
+            // ---------- INITIALISE ----------
+            function init() {
+                // load from storage
+                state.contexts = helpers.load(STORAGE.CONTEXTS, DEFAULT_CTX);
+                state.questions = helpers.load(STORAGE.QUESTIONS, DEFAULT_Q);
+                state.history = helpers.load(STORAGE.HISTORY, {});
+                state.progress = helpers.load(STORAGE.PROGRESS, {});
+                helpers.cleanupProgress();
+
+                // attach global methods (for onclick)
+                window.ui = ui;
+                window.logger = logger;
+                window.history = historyMgmt;
+                window.config = config;
+                window.modal = modal; // internal use
+
+                // DOM event bindings
+                document.getElementById('nextBtn').addEventListener('click', () => logger.handleNext());
+                document.getElementById('skipBtn').addEventListener('click', () => logger.handleSkip());
+                document.getElementById('backBtn').addEventListener('click', () => logger.handleBack());
+                document.getElementById('dlToday').addEventListener('click', () => historyMgmt.downloadDay(helpers.getLocalDay()));
+
+                modal.init();
+
+                // render initial UI
+                ui.renderChips();
+                ui.renderWelcomeGrid();
+
+                // check hash
+                const hash = window.location.hash.substring(1);
+                if (['welcome', 'logger', 'history', 'setup', 'summary'].includes(hash)) {
+                    ui.showView(hash);
+                } else {
+                    ui.showView('welcome');
+                }
             }
-            
-            // Focus first button
-            setTimeout(() => {
-                document.getElementById('modalConfirm').focus();
-            }, 300);
-        }
 
-        // Close modal dialog
-        function closeModal() {
-            const modal = document.getElementById('customModal');
-            modal.classList.remove('active');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                window.modalConfirmCallback = null;
-            }, 300);
-        }
-
-        // Escape HTML to prevent XSS
-        function escapeHtml(unsafe) {
-            if (typeof unsafe !== 'string') return unsafe;
-            return unsafe
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-
-        // Initialize app on load
-        window.addEventListener('DOMContentLoaded', init);
-        
-        // Handle hash changes for direct linking
-        window.addEventListener('hashchange', () => {
-            const hash = window.location.hash.substring(1);
-            if (['welcome', 'logger', 'history', 'setup', 'summary'].includes(hash)) {
-                showView(hash);
-            }
-        });
+            // start
+            window.addEventListener('DOMContentLoaded', init);
+        })();
     </script>
 </body>
 </html>
