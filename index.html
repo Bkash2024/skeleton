@@ -1264,6 +1264,8 @@
                 <input type="search" id="historySearch" placeholder="🔍 search entries..." oninput="history.renderList()">
                 <div class="cal" id="calContainer" aria-label="calendar"></div>
                 <div id="dayDetail" class="scroll"></div>
+                <!-- Day-wise TXT download button appears when viewing a specific day -->
+                <div id="dayDownloadContainer" style="margin-top: 16px; text-align: center;"></div>
             </div>
 
             <!-- SETUP (edit contexts/questions) -->
@@ -1289,7 +1291,7 @@
                         <div style="font-size:20px; font-weight:800;" id="summaryDate"></div>
                     </div>
                     <div id="summList" class="summary-list"></div>
-                    <button class="btn-p" style="width:100%; margin-top:10px;" id="dlToday">📥 download log (.txt)</button>
+                    <button class="btn-p" style="width:100%; margin-top:10px;" id="dlToday">📥 download today's log (.txt)</button>
                     <button class="btn-sec" style="margin-top:12px;" onclick="ui.showView('welcome')">🏠 home</button>
                 </div>
             </div>
@@ -1342,7 +1344,8 @@
                 currentQuestionIndex: 0,
                 answers: {},
                 activeContext: '',
-                isResuming: false
+                isResuming: false,
+                currentViewedDate: null // For day-wise download button
             };
 
             // ---------- HELPER FUNCTIONS ----------
@@ -1450,7 +1453,12 @@
                     const target = document.getElementById(view + 'View');
                     if (target) target.classList.remove('hidden');
 
-                    if (view === 'history') history.renderCalendar();
+                    if (view === 'history') {
+                        history.renderCalendar();
+                        // Clear any existing day download button
+                        document.getElementById('dayDownloadContainer').innerHTML = '';
+                        state.currentViewedDate = null;
+                    }
                     if (view === 'setup') config.render();
                     if (view === 'welcome') welcome.renderGrid();
 
@@ -1838,7 +1846,7 @@
             };
 
             // ---------- HISTORY (calendar, search, download) ----------
-            const historyMgmt = {
+            const history = {
                 renderCalendar() {
                     const container = document.getElementById('calContainer');
                     container.innerHTML = '';
@@ -1888,10 +1896,25 @@
                 viewDay(date) {
                     const logs = state.history[date] || [];
                     const detail = document.getElementById('dayDetail');
+                    const downloadContainer = document.getElementById('dayDownloadContainer');
+                    
                     if (logs.length === 0) {
                         detail.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-soft);">📭 no logs for this day</div>';
+                        downloadContainer.innerHTML = '';
+                        state.currentViewedDate = null;
                         return;
                     }
+                    
+                    // Store current viewed date for download button
+                    state.currentViewedDate = date;
+                    
+                    // Add download button for this day
+                    downloadContainer.innerHTML = `
+                        <button class="btn-p" onclick="history.downloadDay('${date}')" style="width:100%;">
+                            📥 download ${helpers.formatDate(date)}.txt
+                        </button>
+                    `;
+                    
                     document.getElementById('historySearch').value = '';
                     let html = '';
                     const groups = {};
@@ -1923,12 +1946,19 @@
                     const search = document.getElementById('historySearch').value.toLowerCase().trim();
                     const detail = document.getElementById('dayDetail');
                     const cal = document.getElementById('calContainer');
+                    const downloadContainer = document.getElementById('dayDownloadContainer');
+                    
                     if (!search) {
                         cal.style.display = 'grid';
+                        downloadContainer.innerHTML = '';
+                        state.currentViewedDate = null;
+                        this.renderCalendar(); // Re-render calendar when clearing search
                         detail.innerHTML = '';
                         return;
                     }
                     cal.style.display = 'none';
+                    downloadContainer.innerHTML = ''; // Hide download button during search
+                    state.currentViewedDate = null;
 
                     let results = [];
                     Object.keys(state.history).sort((a, b) => new Date(b) - new Date(a)).forEach(date => {
@@ -1978,8 +2008,14 @@
                         state.history[date].splice(index, 1);
                         if (state.history[date].length === 0) delete state.history[date];
                         helpers.persist(STORAGE.HISTORY, state.history);
-                        this.renderCalendar();
-                        this.viewDay(date);
+                        
+                        // If we're viewing this date, refresh the view
+                        if (state.currentViewedDate === date) {
+                            this.viewDay(date);
+                        } else {
+                            this.renderCalendar();
+                        }
+                        
                         if (date === helpers.getLocalDay()) {
                             ui.renderChips();
                             ui.renderWelcomeGrid();
@@ -1990,26 +2026,50 @@
                 downloadDay(date) {
                     const logs = state.history[date];
                     if (!logs || logs.length === 0) return;
-                    let content = `SKELETON LOG — ${helpers.formatDate(date)}\n========================\n\n`;
+                    
+                    let content = `SKELETON LOG — ${helpers.formatDate(date)}\n`;
+                    content += `================================\n\n`;
+                    
+                    // Group logs by context
                     const groups = {};
                     logs.forEach(log => {
                         if (!groups[log.ctx]) groups[log.ctx] = [];
                         groups[log.ctx].push(log);
                     });
+                    
+                    // Add logs for each context
                     Object.entries(groups).forEach(([ctxId, ctxLogs]) => {
-                        const ctx = state.contexts.find(c => c.id === ctxId) || { l: ctxId };
-                        content += `${ctx.l.toUpperCase()}\n${'-'.repeat(ctx.l.length)}\n`;
+                        const ctx = state.contexts.find(c => c.id === ctxId) || { l: ctxId, i: '?' };
+                        content += `\n${ctx.l.toUpperCase()} CONTEXT\n`;
+                        content += `${'-'.repeat(ctx.l.length + 8)}\n\n`;
+                        
                         ctxLogs.forEach((log, i) => {
-                            content += `\n[Session ${i + 1} at ${log.time}]\n`;
+                            content += `[Session ${i + 1} at ${log.time}]\n`;
+                            
                             Object.entries(log.ans).forEach(([qId, val]) => {
                                 const q = state.questions.find(qq => qq.id === qId);
                                 if (!q) return;
-                                const display = Array.isArray(val) ? val.join(', ') : (q.t === 'toggle' ? (val ? 'Yes' : 'No') : val);
-                                content += ` • ${q.l}: ${display}\n`;
+                                
+                                // Format value nicely
+                                let displayValue = val;
+                                if (Array.isArray(val)) {
+                                    displayValue = val.join(', ');
+                                } else if (q.t === 'toggle') {
+                                    displayValue = val ? 'Yes' : 'No';
+                                } else if (q.t === 'range') {
+                                    displayValue = parseFloat(val).toFixed(1);
+                                }
+                                
+                                content += ` • ${q.l}: ${displayValue}\n`;
                             });
+                            
+                            content += '\n';
                         });
+                        
                         content += '\n';
                     });
+                    
+                    // Create and trigger download
                     const blob = new Blob([content], { type: 'text/plain' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -2229,7 +2289,7 @@
                 // attach global methods (for onclick)
                 window.ui = ui;
                 window.logger = logger;
-                window.history = historyMgmt;
+                window.history = history;
                 window.config = config;
                 window.modal = modal; // internal use
 
@@ -2237,7 +2297,7 @@
                 document.getElementById('nextBtn').addEventListener('click', () => logger.handleNext());
                 document.getElementById('skipBtn').addEventListener('click', () => logger.handleSkip());
                 document.getElementById('backBtn').addEventListener('click', () => logger.handleBack());
-                document.getElementById('dlToday').addEventListener('click', () => historyMgmt.downloadDay(helpers.getLocalDay()));
+                document.getElementById('dlToday').addEventListener('click', () => history.downloadDay(helpers.getLocalDay()));
 
                 modal.init();
 
