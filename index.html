@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>skeleton log · context order</title>
+    <title>skeleton log · question bank</title>
     <style>
         * {
             margin: 0;
@@ -561,40 +561,82 @@
             margin-bottom: 12px;
         }
 
-        .question-item {
+        .bank-item {
             background: #f5f5f7;
             padding: 16px;
             border-radius: 16px;
             margin-bottom: 12px;
+            border-left: 4px solid #007aff;
         }
 
-        .context-selector {
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid #d2d2d7;
+        .bank-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .bank-title {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .bank-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
             margin: 8px 0;
-            background: white;
         }
 
-        .order-number {
+        .context-tag {
+            background: #e8e8ed;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            display: inline-block;
+        }
+
+        .context-tag.active {
             background: #007aff;
             color: white;
-            width: 28px;
-            height: 28px;
-            border-radius: 14px;
-            display: inline-flex;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 12px 0;
+        }
+
+        .checkbox-label {
+            display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 6px;
+            background: #e8e8ed;
+            padding: 8px 14px;
+            border-radius: 30px;
             font-size: 14px;
-            font-weight: 600;
-            margin-right: 10px;
+        }
+
+        .checkbox-label input {
+            width: auto;
+            margin: 0;
+            padding: 0;
         }
 
         .reorder-controls {
             display: flex;
             gap: 6px;
             margin-top: 10px;
+        }
+
+        .badge {
+            background: #007aff20;
+            color: #007aff;
+            padding: 4px 8px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
         }
 
         /* modal */
@@ -746,16 +788,31 @@
                     <div id="contextEditor" style="padding: 8px 0 16px;"></div>
                 </div>
 
-                <!-- questions section -->
-                <div class="section-header" onclick="toggleSection('questions')">
-                    <span class="section-title">❓ questions</span>
+                <!-- question bank section -->
+                <div class="section-header" onclick="toggleSection('bank')">
+                    <span class="section-title">📋 question bank</span>
                     <div style="display:flex; gap:8px;">
-                        <button class="icon-btn" style="width:36px; height:36px;" onclick="event.stopPropagation(); addQuestion()">+</button>
-                        <span class="section-toggle" id="questionsToggle">▼</span>
+                        <button class="icon-btn" style="width:36px; height:36px;" onclick="event.stopPropagation(); addToBank()">+</button>
+                        <span class="section-toggle" id="bankToggle">▼</span>
                     </div>
                 </div>
-                <div id="questionsSection" class="section-content">
-                    <div id="questionEditor" style="padding: 8px 0 16px;"></div>
+                <div id="bankSection" class="section-content">
+                    <div style="padding: 8px 0 16px;">
+                        <p style="color:#86868b; margin-bottom:12px;">master list of all questions (no duplicates)</p>
+                        <div id="bankEditor"></div>
+                    </div>
+                </div>
+
+                <!-- context assignments section -->
+                <div class="section-header" onclick="toggleSection('assignments')">
+                    <span class="section-title">🔗 assign to contexts</span>
+                    <span class="section-toggle" id="assignmentsToggle">▼</span>
+                </div>
+                <div id="assignmentsSection" class="section-content">
+                    <div style="padding: 16px 0;">
+                        <p style="color:#86868b; margin-bottom:12px;">select which contexts see each question</p>
+                        <div id="assignmentEditor"></div>
+                    </div>
                 </div>
 
                 <button class="download-btn" style="margin-top:8px;" onclick="saveConfig()">save all</button>
@@ -771,7 +828,7 @@
             </div>
         </div>
 
-        <footer>v1.7.0 · context order</footer>
+        <footer>v2.0.0 · question bank</footer>
     </div>
 
     <!-- modal -->
@@ -789,11 +846,12 @@
     <script>
         // ---------- STORAGE ----------
         const STORAGE = {
-            CONTEXTS: 'sk_ctx_v3',
-            QUESTIONS: 'sk_q_v3',
-            HISTORY: 'sk_h_v3',
-            PROGRESS: 'sk_p_v3',
-            SETTINGS: 'sk_settings_v3'
+            CONTEXTS: 'sk_ctx_v4',
+            BANK: 'sk_bank_v4',        // question bank (master list)
+            ASSIGNMENTS: 'sk_assign_v4', // which contexts get which questions
+            HISTORY: 'sk_h_v4',
+            PROGRESS: 'sk_p_v4',
+            SETTINGS: 'sk_settings_v4'
         };
 
         // ---------- DEFAULTS ----------
@@ -803,24 +861,61 @@
             { id: 'eve', l: 'Evening', i: '🌙', order: 2 }
         ];
 
-        // Questions now have contextId (single) and order per context
-        const DEFAULT_Q = [
-            { id: 'q1', contextId: 'morn', l: 'Mood?', t: 'select', o: 'good,ok,tired', d: 'ok', order: 0 },
-            { id: 'q2', contextId: 'morn', l: 'Water (L)', t: 'range', d: '1.5', order: 1 },
-            { id: 'q3', contextId: 'aft', l: 'Energy level', t: 'range', d: '5', order: 0 },
-            { id: 'q4', contextId: 'eve', l: 'Today summary', t: 'textarea', d: '', order: 0 }
+        // Question Bank (master list) - each question exists once
+        const DEFAULT_BANK = [
+            { 
+                id: 'q1', 
+                l: 'Mood?', 
+                t: 'select', 
+                o: 'good,ok,tired', 
+                d: 'ok',
+                created: Date.now()
+            },
+            { 
+                id: 'q2', 
+                l: 'Water (L)', 
+                t: 'range', 
+                o: '', 
+                d: '1.5',
+                created: Date.now() - 1000
+            },
+            { 
+                id: 'q3', 
+                l: 'Energy level', 
+                t: 'range', 
+                o: '', 
+                d: '5',
+                created: Date.now() - 2000
+            },
+            { 
+                id: 'q4', 
+                l: 'Today summary', 
+                t: 'textarea', 
+                o: '', 
+                d: '',
+                created: Date.now() - 3000
+            }
         ];
+
+        // Assignments: which questions appear in which contexts, with order
+        const DEFAULT_ASSIGNMENTS = {
+            'morn': ['q1', 'q2'],        // Morning gets q1 then q2
+            'aft': ['q3'],                // Afternoon gets q3
+            'eve': ['q4']                 // Evening gets q4
+        };
 
         const DEFAULT_SETTINGS = {
             sections: {
                 contexts: true,
-                questions: true
+                bank: true,
+                assignments: false
             }
         };
 
         // ---------- STATE ----------
         let contexts = JSON.parse(localStorage.getItem(STORAGE.CONTEXTS) || JSON.stringify(DEFAULT_CTX));
-        let questions = JSON.parse(localStorage.getItem(STORAGE.QUESTIONS) || JSON.stringify(DEFAULT_Q));
+        let bank = JSON.parse(localStorage.getItem(STORAGE.BANK) || JSON.stringify(DEFAULT_BANK));
+        let assignments = JSON.parse(localStorage.getItem(STORAGE.ASSIGNMENTS) || JSON.stringify(DEFAULT_ASSIGNMENTS));
         let history = JSON.parse(localStorage.getItem(STORAGE.HISTORY) || '{}');
         let progress = JSON.parse(localStorage.getItem(STORAGE.PROGRESS) || '{}');
         let settings = JSON.parse(localStorage.getItem(STORAGE.SETTINGS) || JSON.stringify(DEFAULT_SETTINGS));
@@ -850,18 +945,13 @@
             });
         }
 
-        // Get ordered questions for a specific context
+        // Get ordered questions for a specific context (from assignments)
         function getQuestionsForContext(contextId) {
-            return questions
-                .filter(q => q.contextId === contextId)
-                .sort((a, b) => (a.order || 0) - (b.order || 0));
-        }
-
-        // Get next order number for a context
-        function getNextOrderForContext(contextId) {
-            const ctxQuestions = questions.filter(q => q.contextId === contextId);
-            if (ctxQuestions.length === 0) return 0;
-            return Math.max(...ctxQuestions.map(q => q.order || 0)) + 1;
+            const questionIds = assignments[contextId] || [];
+            return questionIds
+                .map(id => bank.find(q => q.id === id))
+                .filter(q => q) // remove any that don't exist
+                .map((q, index) => ({ ...q, order: index }));
         }
 
         // ---------- MODAL ----------
@@ -1170,7 +1260,7 @@
                 html += `<div style="background:#f5f5f7; padding:16px; border-radius:16px; margin-bottom:16px;">`;
                 html += `<div style="font-weight:600; margin-bottom:12px;">${ctx.i} ${ctx.l} · ${log.time}</div>`;
                 Object.entries(log.ans).forEach(([qId, val]) => {
-                    const q = questions.find(q => q.id === qId);
+                    const q = bank.find(q => q.id === qId);
                     if (!q) return;
                     const display = Array.isArray(val) ? val.join(', ') : (q.t==='toggle' ? (val ? 'yes' : 'no') : val);
                     html += `<div class="summary-item"><div class="summary-label">${q.l}</div><div class="summary-value">${display}</div></div>`;
@@ -1224,7 +1314,7 @@
                 html += `<button class="entry-delete" onclick="deleteEntry('${date}', ${idx})">✕</button>`;
                 html += `<div class="entry-header"><span>${ctx.i} ${ctx.l}</span><span>${log.time}</span></div>`;
                 Object.entries(log.ans).forEach(([qId, val]) => {
-                    const q = questions.find(q => q.id === qId);
+                    const q = bank.find(q => q.id === qId);
                     if (!q) return;
                     const display = Array.isArray(val) ? val.join(', ') : (q.t==='toggle' ? (val ? 'yes' : 'no') : val);
                     html += `<div class="entry-answer"><strong>${q.l}</strong> ${display}</div>`;
@@ -1282,7 +1372,7 @@
                 html += `<div class="history-entry">`;
                 html += `<div class="entry-header"><span>${r.date} · ${ctx.i} ${ctx.l}</span><span>${r.log.time}</span></div>`;
                 Object.entries(r.log.ans).forEach(([qId, val]) => {
-                    const q = questions.find(q => q.id === qId);
+                    const q = bank.find(q => q.id === qId);
                     if (!q) return;
                     const display = Array.isArray(val) ? val.join(', ') : (q.t==='toggle' ? (val ? 'yes' : 'no') : val);
                     html += `<div class="entry-answer"><strong>${q.l}</strong> ${display}</div>`;
@@ -1317,7 +1407,7 @@
                 ctxLogs.forEach((log, i) => {
                     content += `\n[${i+1}] ${log.time}\n`;
                     Object.entries(log.ans).forEach(([qId, val]) => {
-                        const q = questions.find(q => q.id === qId);
+                        const q = bank.find(q => q.id === qId);
                         if (!q) return;
                         let display = val;
                         if (Array.isArray(val)) display = val.join(', ');
@@ -1348,7 +1438,7 @@
             downloadDay(getToday());
         }
 
-        // ---------- EDITOR ----------
+        // ---------- EDITOR WITH BANK AND ASSIGNMENTS ----------
         function renderEditor() {
             // restore section states
             Object.keys(settings.sections).forEach(section => {
@@ -1366,7 +1456,8 @@
             });
 
             renderContextEditor();
-            renderQuestionEditor();
+            renderBankEditor();
+            renderAssignmentEditor();
         }
 
         function renderContextEditor() {
@@ -1389,63 +1480,215 @@
             document.getElementById('contextEditor').innerHTML = ctxHtml;
         }
 
-        function renderQuestionEditor() {
-            // Group questions by context
-            const sortedContexts = [...contexts].sort((a, b) => (a.order || 0) - (b.order || 0));
+        function renderBankEditor() {
+            // Sort bank by creation date (newest first)
+            const sortedBank = [...bank].sort((a, b) => (b.created || 0) - (a.created || 0));
             
-            let qHtml = '';
-            
-            sortedContexts.forEach(ctx => {
-                const ctxQuestions = questions
-                    .filter(q => q.contextId === ctx.id)
-                    .sort((a, b) => (a.order || 0) - (b.order || 0));
+            let bankHtml = '';
+            sortedBank.forEach(q => {
+                // Count how many contexts use this question
+                const usedIn = Object.entries(assignments)
+                    .filter(([ctxId, qIds]) => qIds.includes(q.id))
+                    .map(([ctxId]) => contexts.find(c => c.id === ctxId)?.l || ctxId);
                 
-                if (ctxQuestions.length > 0) {
-                    qHtml += `<div style="margin:16px 0 8px;"><strong>${ctx.i} ${ctx.l}</strong></div>`;
+                bankHtml += `<div class="bank-item">
+                    <div class="bank-header">
+                        <span class="bank-title">${escapeHtml(q.l)}</span>
+                        <span class="badge">${usedIn.length} context${usedIn.length !== 1 ? 's' : ''}</span>
+                    </div>
                     
-                    ctxQuestions.forEach((q, idx) => {
-                        qHtml += `<div class="question-item" id="question-${q.id}">
-                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
-                                <span class="order-number">${idx + 1}</span>
-                                <input value="${escapeHtml(q.l)}" id="q-label-${q.id}" placeholder="question" style="flex:1;">
-                            </div>
-                            
-                            <select id="q-type-${q.id}" style="width:100%; margin-bottom:10px;" onchange="document.getElementById('q-options-${q.id}').style.display = this.value==='select'||this.value==='multi'?'block':'none'">
-                                <option value="text" ${q.t==='text'?'selected':''}>text</option>
-                                <option value="textarea" ${q.t==='textarea'?'selected':''}>long text</option>
-                                <option value="time" ${q.t==='time'?'selected':''}>time</option>
-                                <option value="range" ${q.t==='range'?'selected':''}>range</option>
-                                <option value="toggle" ${q.t==='toggle'?'selected':''}>yes/no</option>
-                                <option value="select" ${q.t==='select'?'selected':''}>pick one</option>
-                                <option value="multi" ${q.t==='multi'?'selected':''}>pick many</option>
-                            </select>
-                            
-                            <input type="text" id="q-options-${q.id}" placeholder="options (comma separated)" 
-                                   value="${escapeHtml(q.o || '')}" 
-                                   style="width:100%; ${q.t!=='select' && q.t!=='multi' ? 'display:none;' : ''}">
-                            
-                            <div class="reorder-controls" style="margin-top:12px;">
-                                <button class="icon-btn" style="width:36px; height:36px;" onclick="moveQuestion('${q.id}', -1)" ${idx===0?'disabled':''}>↑</button>
-                                <button class="icon-btn" style="width:36px; height:36px;" onclick="moveQuestion('${q.id}', 1)" ${idx===ctxQuestions.length-1?'disabled':''}>↓</button>
-                                <button class="icon-btn" style="width:36px; height:36px; background:#ff3b30; color:white;" onclick="deleteQuestion('${q.id}')">✕</button>
-                            </div>
-                        </div>`;
-                    });
-                }
+                    <div style="margin-bottom:10px;">
+                        <select id="bank-type-${q.id}" style="width:100%; margin-bottom:8px;">
+                            <option value="text" ${q.t==='text'?'selected':''}>text</option>
+                            <option value="textarea" ${q.t==='textarea'?'selected':''}>long text</option>
+                            <option value="time" ${q.t==='time'?'selected':''}>time</option>
+                            <option value="range" ${q.t==='range'?'selected':''}>range</option>
+                            <option value="toggle" ${q.t==='toggle'?'selected':''}>yes/no</option>
+                            <option value="select" ${q.t==='select'?'selected':''}>pick one</option>
+                            <option value="multi" ${q.t==='multi'?'selected':''}>pick many</option>
+                        </select>
+                        
+                        <input type="text" id="bank-options-${q.id}" placeholder="options (comma separated)" 
+                               value="${escapeHtml(q.o || '')}" 
+                               style="width:100%; ${q.t!=='select' && q.t!=='multi' ? 'display:none;' : ''}">
+                    </div>
+                    
+                    ${usedIn.length > 0 ? `
+                        <div class="bank-tags">
+                            ${usedIn.map(ctxName => `<span class="context-tag">${ctxName}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    <div style="display:flex; gap:6px; margin-top:10px;">
+                        <button class="icon-btn" style="flex:1; background:#ff3b30; color:white;" onclick="deleteFromBank('${q.id}')">delete</button>
+                    </div>
+                </div>`;
             });
             
-            // Add "new question" dropdown at the bottom
-            qHtml += `<div class="question-item" style="margin-top:16px;">
-                <div style="margin-bottom:12px; font-weight:500;">add new question to:</div>
-                <select id="newQuestionContext" class="context-selector">
-                    ${sortedContexts.map(ctx => `<option value="${ctx.id}">${ctx.i} ${ctx.l}</option>`).join('')}
+            // Add form to create new question
+            bankHtml += `<div class="bank-item" style="border-left-color: #34c759;">
+                <div style="font-weight:500; margin-bottom:12px;">➕ create new question</div>
+                <input type="text" id="newBankQuestion" placeholder="question text" style="margin-bottom:10px;">
+                <select id="newBankType" style="width:100%; margin-bottom:10px;" onchange="document.getElementById('newBankOptions').style.display = this.value==='select'||this.value==='multi'?'block':'none'">
+                    <option value="text">text</option>
+                    <option value="textarea">long text</option>
+                    <option value="time">time</option>
+                    <option value="range">range</option>
+                    <option value="toggle">yes/no</option>
+                    <option value="select">pick one</option>
+                    <option value="multi">pick many</option>
                 </select>
-                <button class="download-btn" style="margin:8px 0 0;" onclick="addQuestionToContext()">+ add question</button>
+                <input type="text" id="newBankOptions" placeholder="options (comma separated)" style="width:100%; display:none;">
+                <button class="download-btn" style="margin:8px 0 0;" onclick="addToBankFromForm()">save to bank</button>
             </div>`;
             
-            document.getElementById('questionEditor').innerHTML = qHtml;
+            document.getElementById('bankEditor').innerHTML = bankHtml;
         }
 
+        function renderAssignmentEditor() {
+            const sortedContexts = [...contexts].sort((a, b) => (a.order || 0) - (b.order || 0));
+            
+            let assignHtml = '';
+            
+            sortedContexts.forEach(ctx => {
+                const assignedIds = assignments[ctx.id] || [];
+                const assignedQuestions = assignedIds
+                    .map(id => bank.find(q => q.id === id))
+                    .filter(q => q);
+                
+                assignHtml += `<div class="context-item" style="margin-bottom:20px;">
+                    <div style="font-weight:600; margin-bottom:12px;">${ctx.i} ${ctx.l}</div>`;
+                
+                // Show assigned questions in order
+                if (assignedQuestions.length > 0) {
+                    assignHtml += `<div style="margin-bottom:12px;">`;
+                    assignedQuestions.forEach((q, idx) => {
+                        assignHtml += `<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; background:white; padding:8px; border-radius:12px;">
+                            <span class="order-number">${idx + 1}</span>
+                            <span style="flex:1;">${escapeHtml(q.l)}</span>
+                            <button class="icon-btn" style="width:32px; height:32px;" onclick="removeFromContext('${ctx.id}', '${q.id}')">✕</button>
+                        </div>`;
+                    });
+                    assignHtml += `</div>`;
+                    
+                    // Reorder controls
+                    assignHtml += `<div class="reorder-controls" style="margin-bottom:12px;">
+                        <button class="icon-btn" style="width:36px;" onclick="reorderInContext('${ctx.id}', -1)">↑</button>
+                        <button class="icon-btn" style="width:36px;" onclick="reorderInContext('${ctx.id}', 1)">↓</button>
+                    </div>`;
+                } else {
+                    assignHtml += `<p style="color:#86868b; margin-bottom:12px;">no questions assigned</p>`;
+                }
+                
+                // Dropdown to add questions from bank
+                const availableQuestions = bank.filter(q => !assignedIds.includes(q.id));
+                if (availableQuestions.length > 0) {
+                    assignHtml += `<select id="addTo-${ctx.id}" class="context-selector" style="margin-bottom:8px;">
+                        <option value="">select question to add...</option>
+                        ${availableQuestions.map(q => `<option value="${q.id}">${escapeHtml(q.l)}</option>`).join('')}
+                    </select>`;
+                    assignHtml += `<button class="download-btn" style="margin:0;" onclick="addToContext('${ctx.id}')">+ add to ${ctx.l}</button>`;
+                }
+                
+                assignHtml += `</div>`;
+            });
+            
+            document.getElementById('assignmentEditor').innerHTML = assignHtml;
+        }
+
+        // Bank management
+        function addToBank() {
+            // Just scroll to the form
+            document.getElementById('bankSection').classList.remove('collapsed');
+            document.getElementById('bankToggle').innerText = '▼';
+            setTimeout(() => {
+                document.getElementById('newBankQuestion').focus();
+            }, 100);
+        }
+
+        function addToBankFromForm() {
+            const text = document.getElementById('newBankQuestion').value.trim();
+            if (!text) {
+                modal.show('Error', 'Please enter a question');
+                return;
+            }
+            
+            const type = document.getElementById('newBankType').value;
+            const options = document.getElementById('newBankOptions').value;
+            
+            const newId = 'q_' + Date.now();
+            bank.push({
+                id: newId,
+                l: text,
+                t: type,
+                o: options,
+                d: type === 'toggle' ? false : (type === 'range' ? '5' : ''),
+                created: Date.now()
+            });
+            
+            // Clear form
+            document.getElementById('newBankQuestion').value = '';
+            document.getElementById('newBankType').value = 'text';
+            document.getElementById('newBankOptions').value = '';
+            document.getElementById('newBankOptions').style.display = 'none';
+            
+            renderBankEditor();
+            renderAssignmentEditor();
+        }
+
+        function deleteFromBank(qId) {
+            modal.show('Delete', 'Remove this question from bank?', () => {
+                // Remove from all assignments first
+                Object.keys(assignments).forEach(ctxId => {
+                    assignments[ctxId] = (assignments[ctxId] || []).filter(id => id !== qId);
+                });
+                
+                // Remove from bank
+                bank = bank.filter(q => q.id !== qId);
+                
+                renderBankEditor();
+                renderAssignmentEditor();
+            });
+        }
+
+        // Assignment management
+        function addToContext(ctxId) {
+            const select = document.getElementById(`addTo-${ctxId}`);
+            const qId = select.value;
+            if (!qId) return;
+            
+            if (!assignments[ctxId]) assignments[ctxId] = [];
+            assignments[ctxId].push(qId);
+            
+            renderAssignmentEditor();
+        }
+
+        function removeFromContext(ctxId, qId) {
+            if (assignments[ctxId]) {
+                assignments[ctxId] = assignments[ctxId].filter(id => id !== qId);
+                renderAssignmentEditor();
+            }
+        }
+
+        function reorderInContext(ctxId, direction) {
+            if (!assignments[ctxId] || assignments[ctxId].length < 2) return;
+            
+            // This is a simplified version - in practice you'd want to select specific question
+            // For now, we'll just rotate the list as an example
+            if (direction === -1) {
+                // Move first to end
+                const first = assignments[ctxId].shift();
+                assignments[ctxId].push(first);
+            } else {
+                // Move last to front
+                const last = assignments[ctxId].pop();
+                assignments[ctxId].unshift(last);
+            }
+            
+            renderAssignmentEditor();
+        }
+
+        // Context management
         function syncFromEditor() {
             // sync contexts
             contexts.forEach(ctx => {
@@ -1455,12 +1698,10 @@
                 if (label) ctx.l = label.value;
             });
             
-            // sync questions
-            questions.forEach(q => {
-                const label = document.getElementById(`q-label-${q.id}`);
-                const type = document.getElementById(`q-type-${q.id}`);
-                const opts = document.getElementById(`q-options-${q.id}`);
-                if (label) q.l = label.value;
+            // sync bank questions
+            bank.forEach(q => {
+                const type = document.getElementById(`bank-type-${q.id}`);
+                const opts = document.getElementById(`bank-options-${q.id}`);
                 if (type) q.t = type.value;
                 if (opts) q.o = opts.value;
             });
@@ -1473,40 +1714,15 @@
             const target = index + direction;
             if (target < 0 || target >= contexts.length) return;
             
-            // Swap orders
             const tempOrder = contexts[index].order;
             contexts[index].order = contexts[target].order;
             contexts[target].order = tempOrder;
             
-            // Re-sort
             contexts.sort((a, b) => (a.order || 0) - (b.order || 0));
             
             renderEditor();
             renderChips();
             renderWelcomeGrid();
-        }
-
-        function moveQuestion(qId, direction) {
-            syncFromEditor();
-            
-            const q = questions.find(q => q.id === qId);
-            if (!q) return;
-            
-            const ctxQuestions = questions
-                .filter(qq => qq.contextId === q.contextId)
-                .sort((a, b) => (a.order || 0) - (b.order || 0));
-            
-            const index = ctxQuestions.findIndex(qq => qq.id === qId);
-            const target = index + direction;
-            if (target < 0 || target >= ctxQuestions.length) return;
-            
-            // Swap orders within the same context
-            const targetQ = ctxQuestions[target];
-            const tempOrder = q.order;
-            q.order = targetQ.order;
-            targetQ.order = tempOrder;
-            
-            renderEditor();
         }
 
         function addContext() {
@@ -1521,6 +1737,9 @@
                 order: newOrder 
             });
             
+            // Initialize empty assignments for new context
+            assignments[newId] = [];
+            
             renderEditor();
             renderChips();
             renderWelcomeGrid();
@@ -1528,14 +1747,10 @@
 
         function deleteContext(ctxId) {
             const ctx = contexts.find(c => c.id === ctxId);
-            modal.show('Delete', `Remove "${ctx.l}" and all its questions?`, () => {
-                // Remove context
+            modal.show('Delete', `Remove "${ctx.l}"? Questions in bank will be preserved.`, () => {
                 contexts = contexts.filter(c => c.id !== ctxId);
+                delete assignments[ctxId];
                 
-                // Remove all questions for this context
-                questions = questions.filter(q => q.contextId !== ctxId);
-                
-                // Reorder remaining contexts
                 contexts.forEach((c, idx) => {
                     c.order = idx;
                 });
@@ -1551,43 +1766,12 @@
             });
         }
 
-        function addQuestionToContext() {
-            syncFromEditor();
-            
-            const select = document.getElementById('newQuestionContext');
-            const contextId = select.value;
-            const context = contexts.find(c => c.id === contextId);
-            
-            if (!context) return;
-            
-            const nextOrder = getNextOrderForContext(contextId);
-            const newId = 'q_' + Date.now();
-            
-            questions.push({
-                id: newId,
-                contextId: contextId,
-                l: 'new question',
-                t: 'text',
-                o: '',
-                d: '',
-                order: nextOrder
-            });
-            
-            renderEditor();
-        }
-
-        function deleteQuestion(qId) {
-            modal.show('Delete', 'Remove this question?', () => {
-                questions = questions.filter(q => q.id !== qId);
-                renderEditor();
-            });
-        }
-
         function saveConfig() {
             syncFromEditor();
             
             localStorage.setItem(STORAGE.CONTEXTS, JSON.stringify(contexts));
-            localStorage.setItem(STORAGE.QUESTIONS, JSON.stringify(questions));
+            localStorage.setItem(STORAGE.BANK, JSON.stringify(bank));
+            localStorage.setItem(STORAGE.ASSIGNMENTS, JSON.stringify(assignments));
             
             modal.show('Saved', 'Settings saved', () => location.reload());
         }
@@ -1596,13 +1780,14 @@
         window.onload = () => {
             modal.init();
             
-            // Ensure all items have order
-            contexts.forEach((ctx, idx) => {
-                if (ctx.order === undefined) ctx.order = idx;
+            // Ensure all contexts have assignments array
+            contexts.forEach(ctx => {
+                if (!assignments[ctx.id]) assignments[ctx.id] = [];
             });
             
-            questions.forEach((q, idx) => {
-                if (q.order === undefined) q.order = idx;
+            // Ensure all contexts have order
+            contexts.forEach((ctx, idx) => {
+                if (ctx.order === undefined) ctx.order = idx;
             });
             
             renderChips();
@@ -1626,11 +1811,14 @@
         window.downloadToday = downloadToday;
         window.toggleSection = toggleSection;
         window.addContext = addContext;
-        window.addQuestionToContext = addQuestionToContext;
+        window.addToBank = addToBank;
+        window.addToBankFromForm = addToBankFromForm;
+        window.deleteFromBank = deleteFromBank;
+        window.addToContext = addToContext;
+        window.removeFromContext = removeFromContext;
+        window.reorderInContext = reorderInContext;
         window.moveContext = moveContext;
-        window.moveQuestion = moveQuestion;
         window.deleteContext = deleteContext;
-        window.deleteQuestion = deleteQuestion;
         window.saveConfig = saveConfig;
         window.modal = modal;
     </script>
