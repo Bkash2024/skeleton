@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>skeleton log</title>
+    <title>skeleton log · orderable</title>
     <style>
         * {
             margin: 0;
@@ -582,6 +582,105 @@
             font-weight: 500;
         }
 
+        /* collapsible sections */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            cursor: pointer;
+            border-bottom: 1px solid #e8e8ed;
+            margin-top: 16px;
+        }
+
+        .dark-mode .section-header {
+            border-color: #3a3a3c;
+        }
+
+        .section-header:first-of-type {
+            margin-top: 0;
+        }
+
+        .section-title {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .section-toggle {
+            background: none;
+            border: none;
+            font-size: 18px;
+            width: 36px;
+            height: 36px;
+            border-radius: 18px;
+            cursor: pointer;
+        }
+
+        .section-content {
+            transition: max-height 0.3s ease;
+            overflow: hidden;
+            max-height: 2000px;
+        }
+
+        .section-content.collapsed {
+            max-height: 0;
+        }
+
+        .reorder-handle {
+            cursor: grab;
+            padding: 8px;
+            font-size: 18px;
+            color: #86868b;
+        }
+
+        .reorder-handle:active {
+            cursor: grabbing;
+        }
+
+        .question-item {
+            background: #f5f5f7;
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .question-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .question-header input {
+            flex: 1;
+            padding: 12px;
+        }
+
+        .repeat-badge {
+            background: #007aff20;
+            color: #007aff;
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 30px;
+            font-weight: 600;
+        }
+
+        .context-tag {
+            background: #e8e8ed;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            display: inline-block;
+            margin: 4px;
+            cursor: pointer;
+        }
+
+        .context-tag.active {
+            background: #007aff;
+            color: white;
+        }
+
         /* modal */
         .modal {
             position: fixed;
@@ -597,6 +696,7 @@
             opacity: 0;
             pointer-events: none;
             transition: 0.2s;
+            z-index: 1000;
         }
 
         .modal.active {
@@ -715,27 +815,59 @@
                 </div>
             </div>
 
-            <!-- setup view -->
+            <!-- setup view with collapsible sections -->
             <div id="setupView" class="hidden">
                 <div class="history-header">
                     <span class="history-title">settings</span>
                     <button class="icon-btn" style="width:36px; height:36px;" onclick="showView('welcome')">✕</button>
                 </div>
-                <div style="margin-bottom:20px;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
-                        <strong>contexts</strong>
-                        <button class="icon-btn" style="width:36px; height:36px;" onclick="addContext()">+</button>
+
+                <!-- contexts section -->
+                <div class="section-header" onclick="toggleSection('contexts')">
+                    <span class="section-title">📌 contexts</span>
+                    <div style="display:flex; gap:8px;">
+                        <button class="icon-btn" style="width:36px; height:36px;" onclick="event.stopPropagation(); addContext()">+</button>
+                        <span class="section-toggle" id="contextsToggle">▼</span>
                     </div>
-                    <div id="contextEditor"></div>
                 </div>
-                <div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
-                        <strong>questions</strong>
-                        <button class="icon-btn" style="width:36px; height:36px;" onclick="addQuestion()">+</button>
+                <div id="contextsSection" class="section-content">
+                    <div id="contextEditor" style="padding: 8px 0 16px;"></div>
+                </div>
+
+                <!-- questions section -->
+                <div class="section-header" onclick="toggleSection('questions')">
+                    <span class="section-title">❓ questions</span>
+                    <div style="display:flex; gap:8px;">
+                        <button class="icon-btn" style="width:36px; height:36px;" onclick="event.stopPropagation(); addQuestion()">+</button>
+                        <span class="section-toggle" id="questionsToggle">▼</span>
                     </div>
-                    <div id="questionEditor"></div>
                 </div>
-                <button class="download-btn" style="margin-top:20px;" onclick="saveConfig()">save all</button>
+                <div id="questionsSection" class="section-content">
+                    <div id="questionEditor" style="padding: 8px 0 16px;"></div>
+                </div>
+
+                <!-- repeat settings section -->
+                <div class="section-header" onclick="toggleSection('repeat')">
+                    <span class="section-title">🔄 question order & repeat</span>
+                    <span class="section-toggle" id="repeatToggle">▼</span>
+                </div>
+                <div id="repeatSection" class="section-content">
+                    <div style="padding: 16px 0;">
+                        <div style="background:#f5f5f7; padding:16px; border-radius:16px; margin-bottom:12px;">
+                            <div style="margin-bottom:12px; font-weight:500;">drag to reorder questions</div>
+                            <div id="questionOrderList"></div>
+                            <div style="margin-top:16px;">
+                                <label style="display:flex; align-items:center; gap:8px;">
+                                    <input type="checkbox" id="allowRepeat" onchange="updateRepeatSetting()">
+                                    <span>allow questions to repeat across contexts</span>
+                                </label>
+                                <small style="color:#86868b; display:block; margin-top:8px;">when enabled, questions can appear in multiple contexts</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="download-btn" style="margin-top:8px;" onclick="saveConfig()">save all</button>
             </div>
 
             <!-- summary view -->
@@ -748,7 +880,7 @@
             </div>
         </div>
 
-        <footer>v1.5.4 · minimal</footer>
+        <footer>v1.6.0 · orderable</footer>
     </div>
 
     <!-- modal -->
@@ -766,10 +898,11 @@
     <script>
         // ---------- STORAGE ----------
         const STORAGE = {
-            CONTEXTS: 'sk_ctx',
-            QUESTIONS: 'sk_q',
-            HISTORY: 'sk_h',
-            PROGRESS: 'sk_p'
+            CONTEXTS: 'sk_ctx_v2',
+            QUESTIONS: 'sk_q_v2',
+            HISTORY: 'sk_h_v2',
+            PROGRESS: 'sk_p_v2',
+            SETTINGS: 'sk_settings_v2'
         };
 
         // ---------- DEFAULTS ----------
@@ -780,21 +913,32 @@
         ];
 
         const DEFAULT_Q = [
-            { id: 'q1', c: ['morn'], l: 'Mood?', t: 'select', o: 'good,ok,tired', d: 'ok' },
-            { id: 'q2', c: ['morn','aft','eve'], l: 'Water (L)', t: 'range', d: '1.5' }
+            { id: 'q1', c: ['morn'], l: 'Mood?', t: 'select', o: 'good,ok,tired', d: 'ok', order: 0 },
+            { id: 'q2', c: ['morn','aft','eve'], l: 'Water (L)', t: 'range', d: '1.5', order: 1 }
         ];
+
+        const DEFAULT_SETTINGS = {
+            allowRepeat: false,
+            sections: {
+                contexts: true,
+                questions: true,
+                repeat: false
+            }
+        };
 
         // ---------- STATE ----------
         let contexts = JSON.parse(localStorage.getItem(STORAGE.CONTEXTS) || JSON.stringify(DEFAULT_CTX));
         let questions = JSON.parse(localStorage.getItem(STORAGE.QUESTIONS) || JSON.stringify(DEFAULT_Q));
         let history = JSON.parse(localStorage.getItem(STORAGE.HISTORY) || '{}');
         let progress = JSON.parse(localStorage.getItem(STORAGE.PROGRESS) || '{}');
+        let settings = JSON.parse(localStorage.getItem(STORAGE.SETTINGS) || JSON.stringify(DEFAULT_SETTINGS));
 
         let activeContext = '';
         let currentQIndex = 0;
         let answers = {};
         let currentView = 'welcome';
         let currentViewedDate = '';
+        let draggedItem = null;
 
         // ---------- HELPERS ----------
         function getToday() {
@@ -813,6 +957,20 @@
                 if(c==='&') return '&amp;'; if(c==='<') return '&lt;'; if(c==='>') return '&gt;'; if(c==='"') return '&quot;';
                 return c;
             });
+        }
+
+        // get ordered questions for a context
+        function getOrderedQuestions(contextId) {
+            let ctxQuestions = questions.filter(q => q.c.includes(contextId));
+            
+            // sort by order property if exists
+            ctxQuestions.sort((a, b) => {
+                const orderA = a.order !== undefined ? a.order : 999;
+                const orderB = b.order !== undefined ? b.order : 999;
+                return orderA - orderB;
+            });
+            
+            return ctxQuestions;
         }
 
         // ---------- MODAL ----------
@@ -854,6 +1012,23 @@
             renderChips();
         }
 
+        // section toggling
+        function toggleSection(section) {
+            const content = document.getElementById(section + 'Section');
+            const toggle = document.getElementById(section + 'Toggle');
+            
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                toggle.innerText = '▼';
+                settings.sections[section] = true;
+            } else {
+                content.classList.add('collapsed');
+                toggle.innerText = '▶';
+                settings.sections[section] = false;
+            }
+            localStorage.setItem(STORAGE.SETTINGS, JSON.stringify(settings));
+        }
+
         function renderChips() {
             const today = getToday();
             document.getElementById('chipContainer').innerHTML = contexts.map(ctx => {
@@ -876,7 +1051,7 @@
         function getUnansweredCount(date, ctxId) {
             const p = progress[`${date}_${ctxId}`];
             if (!p) return 0;
-            const ctxQs = questions.filter(q => q.c.includes(ctxId));
+            const ctxQs = getOrderedQuestions(ctxId);
             return Math.max(0, ctxQs.length - Object.keys(p.answers || {}).length);
         }
 
@@ -923,7 +1098,7 @@
         }
 
         function renderQuestion() {
-            const filtered = questions.filter(q => q.c.includes(activeContext));
+            const filtered = getOrderedQuestions(activeContext);
             if (currentQIndex >= filtered.length) {
                 completeContext();
                 return;
@@ -1010,7 +1185,7 @@
             const inp = document.getElementById('currentInput');
             if (!inp) return;
             
-            const filtered = questions.filter(q => q.c.includes(activeContext));
+            const filtered = getOrderedQuestions(activeContext);
             if (currentQIndex >= filtered.length) return;
             const q = filtered[currentQIndex];
 
@@ -1026,7 +1201,7 @@
             captureCurrent();
             saveProgress();
             
-            const filtered = questions.filter(q => q.c.includes(activeContext));
+            const filtered = getOrderedQuestions(activeContext);
             if (currentQIndex < filtered.length - 1) {
                 currentQIndex++;
                 renderQuestion();
@@ -1037,7 +1212,7 @@
 
         function handleSkip() {
             saveProgress();
-            const filtered = questions.filter(q => q.c.includes(activeContext));
+            const filtered = getOrderedQuestions(activeContext);
             if (currentQIndex < filtered.length - 1) {
                 currentQIndex++;
                 renderQuestion();
@@ -1224,7 +1399,7 @@
             entries.innerHTML = html;
         }
 
-        // ---------- DOWNLOAD TXT (FULLY FUNCTIONAL) ----------
+        // ---------- DOWNLOAD TXT ----------
         function downloadDay(date) {
             const logs = history[date];
             if (!logs || logs.length === 0) {
@@ -1282,9 +1457,30 @@
             downloadDay(getToday());
         }
 
-        // ---------- EDITOR ----------
+        // ---------- EDITOR WITH ORDERING ----------
         function renderEditor() {
-            // contexts
+            // restore section states
+            Object.keys(settings.sections).forEach(section => {
+                const content = document.getElementById(section + 'Section');
+                const toggle = document.getElementById(section + 'Toggle');
+                if (content && toggle) {
+                    if (settings.sections[section]) {
+                        content.classList.remove('collapsed');
+                        toggle.innerText = '▼';
+                    } else {
+                        content.classList.add('collapsed');
+                        toggle.innerText = '▶';
+                    }
+                }
+            });
+
+            renderContextEditor();
+            renderQuestionEditor();
+            renderOrderList();
+            document.getElementById('allowRepeat').checked = settings.allowRepeat;
+        }
+
+        function renderContextEditor() {
             let ctxHtml = '';
             contexts.forEach((ctx, i) => {
                 ctxHtml += `<div style="background:#f5f5f7; padding:16px; border-radius:16px; margin-bottom:12px;">
@@ -1300,15 +1496,23 @@
                 </div>`;
             });
             document.getElementById('contextEditor').innerHTML = ctxHtml;
+        }
 
-            // questions
+        function renderQuestionEditor() {
             let qHtml = '';
             questions.forEach((q, i) => {
-                qHtml += `<div style="background:#f5f5f7; padding:16px; border-radius:16px; margin-bottom:16px;">
-                    <input value="${escapeHtml(q.l)}" id="q-label-${i}" style="width:100%; margin-bottom:10px;">
+                qHtml += `<div class="question-item" draggable="true" ondragstart="dragStart(event, ${i})" ondragover="dragOver(event)" ondrop="dropQuestion(event, ${i})">
+                    <div class="question-header">
+                        <span class="reorder-handle" draggable="false">⋮⋮</span>
+                        <input value="${escapeHtml(q.l)}" id="q-label-${i}" placeholder="question">
+                        ${q.c.length > 1 ? '<span class="repeat-badge">↻ repeat</span>' : ''}
+                    </div>
                     <div style="margin-bottom:10px;">
                         <small>appears in:</small><br>
-                        ${contexts.map(ctx => `<span class="option-pill" style="display:inline-block; padding:6px 12px; margin:4px;" onclick="toggleQuestionCtx(${i}, '${ctx.id}')">${ctx.i} ${ctx.l}</span>`).join('')}
+                        ${contexts.map(ctx => 
+                            `<span class="context-tag ${q.c.includes(ctx.id) ? 'active' : ''}" 
+                                   onclick="toggleQuestionCtx(${i}, '${ctx.id}')">${ctx.i} ${ctx.l}</span>`
+                        ).join('')}
                     </div>
                     <select id="q-type-${i}" style="width:100%; margin-bottom:10px;" onchange="document.getElementById('q-options-${i}').style.display = this.value==='select'||this.value==='multi'?'block':'none'">
                         <option value="text" ${q.t==='text'?'selected':''}>text</option>
@@ -1330,6 +1534,52 @@
             document.getElementById('questionEditor').innerHTML = qHtml;
         }
 
+        function renderOrderList() {
+            let html = '<div style="background:#f5f5f7; border-radius:16px; padding:8px;">';
+            questions.forEach((q, i) => {
+                html += `<div draggable="true" ondragstart="dragStart(event, ${i})" ondragover="dragOver(event)" ondrop="dropOrder(event, ${i})" 
+                        style="display:flex; align-items:center; gap:10px; padding:12px; margin:4px; background:white; border-radius:12px; cursor:move;">
+                    <span class="reorder-handle">⋮⋮</span>
+                    <span>${q.l.substring(0,30)}${q.l.length > 30 ? '…' : ''}</span>
+                    ${q.c.length > 1 ? '<span class="repeat-badge">↻</span>' : ''}
+                </div>`;
+            });
+            html += '</div>';
+            document.getElementById('questionOrderList').innerHTML = html;
+        }
+
+        // drag and drop ordering
+        function dragStart(event, index) {
+            draggedItem = index;
+            event.dataTransfer.setData('text/plain', index);
+        }
+
+        function dragOver(event) {
+            event.preventDefault();
+        }
+
+        function dropQuestion(event, targetIndex) {
+            event.preventDefault();
+            if (draggedItem === null) return;
+            
+            const newQuestions = [...questions];
+            const [moved] = newQuestions.splice(draggedItem, 1);
+            newQuestions.splice(targetIndex, 0, moved);
+            
+            // update order property
+            newQuestions.forEach((q, idx) => {
+                q.order = idx;
+            });
+            
+            questions = newQuestions;
+            draggedItem = null;
+            renderEditor();
+        }
+
+        function dropOrder(event, targetIndex) {
+            dropQuestion(event, targetIndex);
+        }
+
         function syncFromEditor() {
             contexts.forEach((_, i) => {
                 const icon = document.getElementById(`ctx-icon-${i}`);
@@ -1337,6 +1587,7 @@
                 if (icon) contexts[i].i = icon.value;
                 if (label) contexts[i].l = label.value;
             });
+            
             questions.forEach((_, i) => {
                 const label = document.getElementById(`q-label-${i}`);
                 const type = document.getElementById(`q-type-${i}`);
@@ -1345,6 +1596,11 @@
                 if (type) questions[i].t = type.value;
                 if (opts) questions[i].o = opts.value;
             });
+        }
+
+        function updateRepeatSetting() {
+            settings.allowRepeat = document.getElementById('allowRepeat').checked;
+            localStorage.setItem(STORAGE.SETTINGS, JSON.stringify(settings));
         }
 
         function moveContext(idx, dir) {
@@ -1361,16 +1617,28 @@
             const target = idx + dir;
             if (target < 0 || target >= questions.length) return;
             [questions[idx], questions[target]] = [questions[target], questions[idx]];
+            
+            // update order property
+            questions.forEach((q, i) => {
+                q.order = i;
+            });
+            
             renderEditor();
         }
 
         function toggleQuestionCtx(qIdx, ctxId) {
             syncFromEditor();
             const q = questions[qIdx];
-            if (q.c.includes(ctxId)) {
-                q.c = q.c.filter(id => id !== ctxId);
+            
+            if (!settings.allowRepeat) {
+                // if repeat not allowed, remove from other contexts first
+                q.c = [ctxId];
             } else {
-                q.c.push(ctxId);
+                if (q.c.includes(ctxId)) {
+                    q.c = q.c.filter(id => id !== ctxId);
+                } else {
+                    q.c.push(ctxId);
+                }
             }
             renderEditor();
         }
@@ -1396,19 +1664,38 @@
 
         function addQuestion() {
             syncFromEditor();
-            questions.push({ id: 'q_'+Date.now(), c: [], l: 'new question?', t: 'text', o: '', d: '' });
+            const newOrder = questions.length;
+            questions.push({ 
+                id: 'q_'+Date.now(), 
+                c: contexts.length > 0 ? [contexts[0].id] : [], 
+                l: 'new question?', 
+                t: 'text', 
+                o: '', 
+                d: '',
+                order: newOrder 
+            });
             renderEditor();
         }
 
         function deleteQuestion(idx) {
             modal.show('Delete', 'Remove this question?', () => {
                 questions.splice(idx, 1);
+                // update order of remaining questions
+                questions.forEach((q, i) => {
+                    q.order = i;
+                });
                 renderEditor();
             });
         }
 
         function saveConfig() {
             syncFromEditor();
+            
+            // ensure all questions have order
+            questions.forEach((q, i) => {
+                if (q.order === undefined) q.order = i;
+            });
+            
             localStorage.setItem(STORAGE.CONTEXTS, JSON.stringify(contexts));
             localStorage.setItem(STORAGE.QUESTIONS, JSON.stringify(questions));
             modal.show('Saved', 'Settings saved', () => location.reload());
@@ -1417,6 +1704,12 @@
         // ---------- INIT ----------
         window.onload = () => {
             modal.init();
+            
+            // ensure questions have order property
+            questions.forEach((q, i) => {
+                if (q.order === undefined) q.order = i;
+            });
+            
             renderChips();
             renderWelcomeGrid();
             showView('welcome');
@@ -1436,6 +1729,7 @@
         window.deleteEntry = deleteEntry;
         window.downloadCurrentDay = downloadCurrentDay;
         window.downloadToday = downloadToday;
+        window.toggleSection = toggleSection;
         window.addContext = addContext;
         window.addQuestion = addQuestion;
         window.moveContext = moveContext;
@@ -1444,6 +1738,11 @@
         window.deleteContext = deleteContext;
         window.deleteQuestion = deleteQuestion;
         window.saveConfig = saveConfig;
+        window.dragStart = dragStart;
+        window.dragOver = dragOver;
+        window.dropQuestion = dropQuestion;
+        window.dropOrder = dropOrder;
+        window.updateRepeatSetting = updateRepeatSetting;
         window.modal = modal;
     </script>
 </body>
