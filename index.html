@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>skeleton log · collapsible</title>
+    <title>skeleton log · efficient</title>
     <style>
         /* --- CORE LAYOUT --- */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -54,14 +54,15 @@
         .button-row button { flex: 1; background: #f5f5f7; border: none; padding: 16px; border-radius: 18px; font-weight: 500; font-size: 15px; cursor: pointer; }
         .button-row .primary { background: #007aff; color: white; }
 
-        /* --- ACCORDION STYLES (NEW) --- */
+        /* --- ACCORDION STYLES --- */
         .section-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; cursor: pointer; border-bottom: 1px solid #e8e8ed; margin-top: 16px; }
         .section-content { display: block; overflow: visible; }
         .section-content.collapsed { display: none; }
         
-        .accordion-item { margin-bottom: 10px; border: 1px solid #e8e8ed; border-radius: 16px; overflow: hidden; background: #fff; }
+        .accordion-item { margin-bottom: 16px; border: 1px solid #e8e8ed; border-radius: 16px; overflow: hidden; background: #fff; }
         .accordion-header { padding: 14px 16px; background: #f5f5f7; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 15px; }
-        .accordion-body { padding: 16px; border-top: 1px solid #e8e8ed; display: block; }
+        .accordion-toolbar { padding: 8px 16px; background: #fff; border-bottom: 1px solid #e8e8ed; }
+        .accordion-body { padding: 16px; background: #fff; display: block; }
         .accordion-body.hidden { display: none; }
         
         .assigned-item { display: flex; align-items: center; gap: 8px; background: white; padding: 10px; border-radius: 12px; margin-bottom: 8px; border: 1px solid #e8e8ed; }
@@ -166,7 +167,16 @@
                 </div>
                 <div id="bankSection" class="section-content collapsed">
                     <button class="download-btn" style="margin-top:0; margin-bottom:16px;" onclick="addToBank()">+ Create New Question</button>
-                    <div id="bankEditor"></div>
+                    
+                    <div class="accordion-item" style="border:none;">
+                        <div class="accordion-header" style="background:#e8e8ed; border-radius:12px;" onclick="toggleItemExpand('bankList')">
+                            <span>Edit Existing Questions</span>
+                            <span id="bankListIcon">▶</span>
+                        </div>
+                        <div id="bankListBody" class="accordion-body hidden">
+                            <div id="bankEditor"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="section-header" onclick="toggleSection('contexts')">
@@ -228,7 +238,7 @@
         let answers = {};
         let currentViewedDate = '';
 
-        // UI STATE FOR ACCORDIONS (Not saved to DB, just session)
+        // UI STATE FOR ACCORDIONS
         let expandedItems = new Set(); 
 
         // --- CORE UI ---
@@ -451,7 +461,7 @@
         function searchHistory() {
             const term = document.getElementById('searchInput').value.toLowerCase();
             if(!term) { renderCalendar(); document.getElementById('historyEntries').innerHTML=''; return; }
-            document.getElementById('calendar').innerHTML = ''; // Hide calendar
+            document.getElementById('calendar').innerHTML = ''; 
             const list = document.getElementById('historyEntries');
             let html = '';
             Object.keys(history).sort().reverse().forEach(date => {
@@ -488,19 +498,29 @@
                 else { el.classList.add('collapsed'); tog.innerText='▶'; }
             });
 
-            // 1. Assignments (Collapsible Tabs)
+            // 1. Assignments
             const assignDiv = document.getElementById('assignmentEditor');
             let html = '';
             contexts.sort((a,b)=>a.order-b.order).forEach(ctx => {
                 const isExpanded = expandedItems.has('assign_'+ctx.id);
+                
+                // HEADER with Toolbar
                 html += `<div class="accordion-item">
                     <div class="accordion-header" onclick="toggleItemExpand('assign_${ctx.id}')">
                         <span>${ctx.i} ${ctx.l}</span>
                         <span>${isExpanded ? '▼' : '▶'}</span>
                     </div>
+                    
+                    <div class="accordion-toolbar">
+                        <select onchange="addToContext('${ctx.id}', this.value); this.value='';" style="width:100%; border-radius:8px; border:1px solid #ddd; background:#f9f9f9; padding:8px;">
+                            <option value="">+ Add Question to ${ctx.l}...</option>
+                            ${bank.filter(b => !(assignments[ctx.id]||[]).includes(b.id)).map(q => `<option value="${q.id}">${q.l}</option>`).join('')}
+                        </select>
+                    </div>
+
                     <div class="accordion-body ${isExpanded ? '' : 'hidden'}">`;
                 
-                // Content of assignment
+                // Content
                 const qIds = assignments[ctx.id] || [];
                 if(qIds.length > 0) {
                     qIds.forEach((qid, idx) => {
@@ -518,27 +538,27 @@
                         }
                     });
                 } else {
-                    html += `<div style="color:#aaa; font-size:13px; margin-bottom:10px;">No questions assigned</div>`;
-                }
-                
-                const avail = bank.filter(b => !qIds.includes(b.id));
-                if(avail.length > 0) {
-                    html += `<select onchange="addToContext('${ctx.id}', this.value); this.value='';" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ddd; margin-top:5px;">
-                        <option value="">+ Add Question to ${ctx.l}...</option>
-                        ${avail.map(q => `<option value="${q.id}">${q.l}</option>`).join('')}
-                    </select>`;
+                    html += `<div style="color:#aaa; font-size:13px;">No questions assigned</div>`;
                 }
                 
                 html += `</div></div>`; // Close Body, Close Item
             });
             assignDiv.innerHTML = html;
 
-            // 2. Bank (Collapsible Questions)
-            const bankDiv = document.getElementById('bankEditor');
-            bankDiv.innerHTML = bank.map(q => {
+            // 2. Bank List (Separate from Create)
+            const bankListExpanded = expandedItems.has('bankList');
+            if(bankListExpanded) {
+                 document.getElementById('bankListBody').classList.remove('hidden');
+                 document.getElementById('bankListIcon').innerText = '▼';
+            } else {
+                 document.getElementById('bankListBody').classList.add('hidden');
+                 document.getElementById('bankListIcon').innerText = '▶';
+            }
+            
+            document.getElementById('bankEditor').innerHTML = bank.map(q => {
                 const isExpanded = expandedItems.has('bank_'+q.id);
                 return `
-                <div class="accordion-item" style="border-left: 4px solid #007aff;">
+                <div class="accordion-item" style="border-left: 4px solid #007aff; margin-bottom:10px;">
                     <div class="accordion-header" onclick="toggleItemExpand('bank_${q.id}')">
                         <span>${q.l}</span>
                         <span>${isExpanded ? '▼' : '▶'}</span>
@@ -619,8 +639,12 @@
 
         window.addToBank = function() {
             const newId = 'q' + Date.now();
-            bank.push({id: newId, l:'New Question', t:'text', o:''});
-            expandedItems.add('bank_'+newId); // Auto expand new item
+            // UNSHIFT adds to top, PUSH adds to bottom
+            bank.unshift({id: newId, l:'New Question', t:'text', o:''});
+            
+            // Auto-expand the "Edit Existing" section if it's closed
+            if(!expandedItems.has('bankList')) expandedItems.add('bankList');
+            expandedItems.add('bank_'+newId);
             saveAll();
         };
 
@@ -658,7 +682,7 @@
 
         // --- BACKUP ---
         function exportBackup() {
-            const data = { contexts, bank, assignments, history, version:'collapsible_v5' };
+            const data = { contexts, bank, assignments, history, version:'efficient_v5' };
             const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url; a.download = `skeleton_backup_${new Date().toISOString().slice(0,10)}.json`;
