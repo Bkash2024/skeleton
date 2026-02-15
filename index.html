@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>skeleton log · complete</title>
+    <title>skeleton log · collapsible</title>
     <style>
-        /* --- CORE LAYOUT (SCROLL FIX) --- */
+        /* --- CORE LAYOUT --- */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
@@ -16,23 +16,20 @@
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            /* THE MAGIC FIX: */
             height: auto; 
             overflow-y: auto; 
         }
         .wrap { width: 100%; max-width: 400px; }
         
-        /* --- CARDS --- */
         .card { 
             background: #fff; 
             border-radius: 28px; 
             padding: 24px 20px; 
             box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
-            min-height: 460px; 
             display: flex; 
             flex-direction: column; 
             margin-bottom: 16px; 
-            height: auto; /* Allows growing */
+            height: auto; 
         }
 
         /* --- BUTTONS & CHIPS --- */
@@ -57,16 +54,21 @@
         .button-row button { flex: 1; background: #f5f5f7; border: none; padding: 16px; border-radius: 18px; font-weight: 500; font-size: 15px; cursor: pointer; }
         .button-row .primary { background: #007aff; color: white; }
 
-        /* --- SETTINGS (FIXED) --- */
+        /* --- ACCORDION STYLES (NEW) --- */
         .section-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; cursor: pointer; border-bottom: 1px solid #e8e8ed; margin-top: 16px; }
-        .section-content { display: block; overflow: visible; } /* No max-height limit */
+        .section-content { display: block; overflow: visible; }
         .section-content.collapsed { display: none; }
+        
+        .accordion-item { margin-bottom: 10px; border: 1px solid #e8e8ed; border-radius: 16px; overflow: hidden; background: #fff; }
+        .accordion-header { padding: 14px 16px; background: #f5f5f7; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 15px; }
+        .accordion-body { padding: 16px; border-top: 1px solid #e8e8ed; display: block; }
+        .accordion-body.hidden { display: none; }
         
         .assigned-item { display: flex; align-items: center; gap: 8px; background: white; padding: 10px; border-radius: 12px; margin-bottom: 8px; border: 1px solid #e8e8ed; }
         .reorder-controls { display: flex; gap: 4px; }
         .mini-btn { width: 32px; height: 32px; border-radius: 8px; border: none; background: #e8e8ed; cursor: pointer; display:flex; align-items:center; justify-content:center; }
 
-        /* --- CALENDAR (RESTORED) --- */
+        /* --- CALENDAR --- */
         .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 24px; }
         .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 14px; background: #f5f5f7; border-radius: 12px; cursor: pointer; position: relative; }
         .cal-day.today { border: 2px solid #007aff; }
@@ -151,7 +153,7 @@
                 <div id="autoSaveIndicator" style="text-align:right; font-size:11px; color:#34c759; margin-bottom:10px; opacity:0;">✓ Saved</div>
 
                 <div class="section-header" onclick="toggleSection('assignments')">
-                    <span class="section-title">🔗 Tab Content (Assignments)</span>
+                    <span class="section-title">🔗 Tab Assignments</span>
                     <span id="assignmentsToggle">▼</span>
                 </div>
                 <div id="assignmentsSection" class="section-content">
@@ -163,8 +165,8 @@
                     <span id="bankToggle">▶</span>
                 </div>
                 <div id="bankSection" class="section-content collapsed">
+                    <button class="download-btn" style="margin-top:0; margin-bottom:16px;" onclick="addToBank()">+ Create New Question</button>
                     <div id="bankEditor"></div>
-                    <button class="download-btn" onclick="addToBank()">+ New Question</button>
                 </div>
 
                 <div class="section-header" onclick="toggleSection('contexts')">
@@ -200,7 +202,7 @@
     </div>
 
     <script>
-        // *** STORAGE CONFIG (Keep v5 for data safety) ***
+        // *** STORAGE CONFIG ***
         const STORAGE = {
             CONTEXTS: 'sk_ctx_v5',
             BANK: 'sk_bank_v5',
@@ -225,6 +227,9 @@
         let currentQIndex = 0;
         let answers = {};
         let currentViewedDate = '';
+
+        // UI STATE FOR ACCORDIONS (Not saved to DB, just session)
+        let expandedItems = new Set(); 
 
         // --- CORE UI ---
         function showView(view) {
@@ -292,7 +297,7 @@
             if(currentQIndex >= qIds.length) { completeContext(); return; }
             
             const q = bank.find(x => x.id === qIds[currentQIndex]);
-            if(!q) { currentQIndex++; renderQuestion(); return; } // Skip missing
+            if(!q) { currentQIndex++; renderQuestion(); return; } 
 
             document.getElementById('ctxName').innerText = ctx.l;
             document.getElementById('stepText').innerText = `${currentQIndex+1}/${qIds.length}`;
@@ -372,15 +377,12 @@
             if(!history[today]) history[today] = [];
             history[today].push({ ctx: activeCtxId, ans: answers, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });
             localStorage.setItem(STORAGE.HISTORY, JSON.stringify(history));
-            
-            // Clear progress
             delete progress[`${today}_${activeCtxId}`];
             localStorage.setItem(STORAGE.PROGRESS, JSON.stringify(progress));
-            
             modal.show('Saved!', 'Log entry saved.', () => showView('welcome'));
         }
 
-        // --- HISTORY (RESTORED CALENDAR) ---
+        // --- HISTORY ---
         function renderCalendar() {
             const cal = document.getElementById('calendar');
             const today = new Date();
@@ -390,11 +392,8 @@
             const firstDay = new Date(y, m, 1).getDay();
             
             let html = '';
-            // Headers
             ['S','M','T','W','T','F','S'].forEach(d => html += `<div style="text-align:center;font-size:12px;color:#888;">${d}</div>`);
-            // Empty slots
             for(let i=0; i<firstDay; i++) html += '<div></div>';
-            // Days
             for(let d=1; d<=daysInMonth; d++) {
                 const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 const hasData = history[dateStr]?.length > 0;
@@ -453,10 +452,8 @@
             const term = document.getElementById('searchInput').value.toLowerCase();
             if(!term) { renderCalendar(); document.getElementById('historyEntries').innerHTML=''; return; }
             document.getElementById('calendar').innerHTML = ''; // Hide calendar
-            
             const list = document.getElementById('historyEntries');
             let html = '';
-            
             Object.keys(history).sort().reverse().forEach(date => {
                 history[date].forEach(l => {
                     const c = contexts.find(x => x.id === l.ctx) || {l:''};
@@ -474,7 +471,14 @@
             list.innerHTML = html || '<div style="text-align:center; padding:20px;">No matches</div>';
         }
 
-        // --- SETTINGS (RESTORED EDITING) ---
+        // --- SETTINGS (COLLAPSIBLE ITEMS) ---
+        
+        function toggleItemExpand(id) {
+            if(expandedItems.has(id)) expandedItems.delete(id);
+            else expandedItems.add(id);
+            renderEditor();
+        }
+
         function renderEditor() {
             // Restore sections state
             Object.keys(settings.sections).forEach(k => {
@@ -484,13 +488,20 @@
                 else { el.classList.add('collapsed'); tog.innerText='▶'; }
             });
 
-            // 1. Assignments (With Reorder)
+            // 1. Assignments (Collapsible Tabs)
             const assignDiv = document.getElementById('assignmentEditor');
             let html = '';
             contexts.sort((a,b)=>a.order-b.order).forEach(ctx => {
-                html += `<div style="margin-bottom:20px;"><div style="font-weight:600; margin-bottom:10px;">${ctx.i} ${ctx.l}</div>`;
-                const qIds = assignments[ctx.id] || [];
+                const isExpanded = expandedItems.has('assign_'+ctx.id);
+                html += `<div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleItemExpand('assign_${ctx.id}')">
+                        <span>${ctx.i} ${ctx.l}</span>
+                        <span>${isExpanded ? '▼' : '▶'}</span>
+                    </div>
+                    <div class="accordion-body ${isExpanded ? '' : 'hidden'}">`;
                 
+                // Content of assignment
+                const qIds = assignments[ctx.id] || [];
                 if(qIds.length > 0) {
                     qIds.forEach((qid, idx) => {
                         const q = bank.find(x => x.id === qid);
@@ -506,42 +517,53 @@
                             </div>`;
                         }
                     });
+                } else {
+                    html += `<div style="color:#aaa; font-size:13px; margin-bottom:10px;">No questions assigned</div>`;
                 }
                 
                 const avail = bank.filter(b => !qIds.includes(b.id));
                 if(avail.length > 0) {
                     html += `<select onchange="addToContext('${ctx.id}', this.value); this.value='';" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ddd; margin-top:5px;">
-                        <option value="">+ Add Question...</option>
+                        <option value="">+ Add Question to ${ctx.l}...</option>
                         ${avail.map(q => `<option value="${q.id}">${q.l}</option>`).join('')}
                     </select>`;
                 }
-                html += `</div>`;
+                
+                html += `</div></div>`; // Close Body, Close Item
             });
             assignDiv.innerHTML = html;
 
-            // 2. Bank (With Edits)
+            // 2. Bank (Collapsible Questions)
             const bankDiv = document.getElementById('bankEditor');
-            bankDiv.innerHTML = bank.map(q => `
-                <div style="background:#f5f5f7; padding:10px; border-radius:12px; margin-bottom:10px; border-left:4px solid #007aff;">
-                    <div style="display:flex; gap:10px; margin-bottom:5px;">
-                        <input value="${q.l}" onchange="updateBank('${q.id}', 'l', this.value)" style="flex:1;">
-                        <button onclick="deleteFromBank('${q.id}')" style="border:none; background:none; color:red;">✕</button>
+            bankDiv.innerHTML = bank.map(q => {
+                const isExpanded = expandedItems.has('bank_'+q.id);
+                return `
+                <div class="accordion-item" style="border-left: 4px solid #007aff;">
+                    <div class="accordion-header" onclick="toggleItemExpand('bank_${q.id}')">
+                        <span>${q.l}</span>
+                        <span>${isExpanded ? '▼' : '▶'}</span>
                     </div>
-                    <div style="display:flex; gap:10px;">
-                        <select onchange="updateBank('${q.id}','t',this.value)" style="width:100px;">
-                            <option value="text" ${q.t==='text'?'selected':''}>Text</option>
-                            <option value="range" ${q.t==='range'?'selected':''}>Range</option>
-                            <option value="toggle" ${q.t==='toggle'?'selected':''}>Yes/No</option>
-                            <option value="select" ${q.t==='select'?'selected':''}>Select</option>
-                            <option value="multi" ${q.t==='multi'?'selected':''}>Multi</option>
-                            <option value="time" ${q.t==='time'?'selected':''}>Time</option>
-                        </select>
-                        <input value="${q.o||''}" placeholder="Options..." onchange="updateBank('${q.id}','o',this.value)" style="flex:1; display:${(q.t==='select'||q.t==='multi')?'block':'none'}">
+                    <div class="accordion-body ${isExpanded ? '' : 'hidden'}">
+                        <div style="display:flex; gap:10px; margin-bottom:5px;">
+                            <input value="${q.l}" onchange="updateBank('${q.id}', 'l', this.value)" style="flex:1; border:1px solid #ddd;">
+                            <button onclick="deleteFromBank('${q.id}')" style="border:none; background:none; color:red;">Delete</button>
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <select onchange="updateBank('${q.id}','t',this.value)" style="width:100px; border:1px solid #ddd;">
+                                <option value="text" ${q.t==='text'?'selected':''}>Text</option>
+                                <option value="range" ${q.t==='range'?'selected':''}>Range</option>
+                                <option value="toggle" ${q.t==='toggle'?'selected':''}>Yes/No</option>
+                                <option value="select" ${q.t==='select'?'selected':''}>Select</option>
+                                <option value="multi" ${q.t==='multi'?'selected':''}>Multi</option>
+                                <option value="time" ${q.t==='time'?'selected':''}>Time</option>
+                            </select>
+                            <input value="${q.o||''}" placeholder="Options..." onchange="updateBank('${q.id}','o',this.value)" style="flex:1; display:${(q.t==='select'||q.t==='multi')?'block':'none'}; border:1px solid #ddd;">
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
 
-            // 3. Contexts (With Reorder)
+            // 3. Contexts (Reorder)
             document.getElementById('contextEditor').innerHTML = contexts.map((c, i) => `
                 <div style="display:flex; gap:5px; margin-bottom:10px; align-items:center;">
                     <input value="${c.i}" onchange="updateCtx('${c.id}', 'i', this.value)" style="width:40px; text-align:center;">
@@ -553,7 +575,7 @@
             `).join('');
         }
 
-        // --- EDITOR LOGIC ---
+        // --- EDITOR ACTIONS ---
         function toggleSection(key) {
             settings.sections[key] = !settings.sections[key];
             localStorage.setItem(STORAGE.SETTINGS, JSON.stringify(settings));
@@ -570,7 +592,7 @@
         window.moveContext = function(idx, dir) {
             if (dir===-1 && idx>0) { [contexts[idx].order, contexts[idx-1].order] = [contexts[idx-1].order, contexts[idx].order]; }
             if (dir===1 && idx<contexts.length-1) { [contexts[idx].order, contexts[idx+1].order] = [contexts[idx+1].order, contexts[idx].order]; }
-            contexts.sort((a,b)=>a.order-b.order); // re-sort array
+            contexts.sort((a,b)=>a.order-b.order); 
             saveAll();
         };
 
@@ -598,6 +620,7 @@
         window.addToBank = function() {
             const newId = 'q' + Date.now();
             bank.push({id: newId, l:'New Question', t:'text', o:''});
+            expandedItems.add('bank_'+newId); // Auto expand new item
             saveAll();
         };
 
@@ -633,9 +656,9 @@
             setTimeout(() => document.getElementById('autoSaveIndicator').style.opacity = '0', 1000);
         }
 
-        // --- BACKUP & DOWNLOAD ---
+        // --- BACKUP ---
         function exportBackup() {
-            const data = { contexts, bank, assignments, history, version:'complete_v5' };
+            const data = { contexts, bank, assignments, history, version:'collapsible_v5' };
             const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url; a.download = `skeleton_backup_${new Date().toISOString().slice(0,10)}.json`;
@@ -683,7 +706,6 @@
             document.body.appendChild(a); a.click();
         };
 
-        // --- MODAL ---
         const modal = {
             el: document.getElementById('modal'),
             show(t, b, cb) {
@@ -696,7 +718,6 @@
             }
         };
 
-        // INIT
         window.onload = () => { renderWelcome(); };
     </script>
 </body>
