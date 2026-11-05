@@ -3,100 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>skeleton log · efficient</title>
-    <style>
-        /* --- CORE LAYOUT --- */
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-            background: #f5f5f7; 
-            color: #1d1d1f; 
-            padding: 16px 12px 60px; 
-            min-height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            height: auto; 
-            overflow-y: auto; 
-        }
-        .wrap { width: 100%; max-width: 400px; }
-        
-        .card { 
-            background: #fff; 
-            border-radius: 28px; 
-            padding: 24px 20px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
-            display: flex; 
-            flex-direction: column; 
-            margin-bottom: 16px; 
-            height: auto; 
-        }
-
-        /* --- BUTTONS & CHIPS --- */
-        .icon-btn { background: #e8e8ed; border: none; width: 44px; height: 44px; border-radius: 22px; font-size: 22px; cursor: pointer; transition: 0.2s; }
-        .icon-btn:active { transform: scale(0.95); }
-        .download-btn { background: #007aff; color: white; border: none; padding: 16px; border-radius: 18px; font-weight: 500; width: 100%; margin: 16px 0; cursor: pointer; }
-        
-        .chip-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0 20px; scrollbar-width: none; }
-        .chip-scroll::-webkit-scrollbar { display: none; }
-        .chip { flex: 0 0 auto; background: #fff; border: 1.5px solid #d2d2d7; padding: 10px 18px; border-radius: 40px; font-weight: 500; font-size: 15px; display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; }
-        .chip.active { border-color: #007aff; background: #f0f7ff; }
-        
-        /* --- LOGGER --- */
-        .ctx-btn { background: #f5f5f7; border: none; padding: 18px; border-radius: 20px; font-size: 16px; font-weight: 500; display: flex; align-items: center; gap: 12px; cursor: pointer; width: 100%; margin-bottom: 10px; }
-        .logger-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #e8e8ed; }
-        .question { font-size: 22px; font-weight: 600; margin-bottom: 32px; text-align: center; line-height: 1.4; }
-        .input-area { flex: 1; display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
-        input, textarea, select { background: #f5f5f7; border: none; padding: 16px 18px; border-radius: 18px; font-size: 16px; width: 100%; outline: none; }
-        .option-pill { background: #f5f5f7; padding: 16px 20px; border-radius: 18px; text-align: center; font-weight: 500; cursor: pointer; margin-bottom: 8px; border: 2px solid transparent; }
-        .option-pill.active { border-color: #007aff; background: #f0f7ff; }
-        .button-row { display: flex; gap: 10px; margin-top: 16px; }
-        .button-row button { flex: 1; background: #f5f5f7; border: none; padding: 16px; border-radius: 18px; font-weight: 500; font-size: 15px; cursor: pointer; }
-        .button-row .primary { background: #007aff; color: white; }
-
-        /* --- ACCORDION STYLES --- */
-        .section-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; cursor: pointer; border-bottom: 1px solid #e8e8ed; margin-top: 16px; }
-        .section-content { display: block; overflow: visible; }
-        .section-content.collapsed { display: none; }
-        
-        .accordion-item { margin-bottom: 16px; border: 1px solid #e8e8ed; border-radius: 16px; overflow: hidden; background: #fff; }
-        .accordion-header { padding: 14px 16px; background: #f5f5f7; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 15px; }
-        .accordion-toolbar { padding: 8px 16px; background: #fff; border-bottom: 1px solid #e8e8ed; }
-        .accordion-body { padding: 16px; background: #fff; display: block; }
-        .accordion-body.hidden { display: none; }
-        
-        .assigned-item { display: flex; align-items: center; gap: 8px; background: white; padding: 10px; border-radius: 12px; margin-bottom: 8px; border: 1px solid #e8e8ed; }
-        .reorder-controls { display: flex; gap: 4px; }
-        .mini-btn { width: 32px; height: 32px; border-radius: 8px; border: none; background: #e8e8ed; cursor: pointer; display:flex; align-items:center; justify-content:center; }
-
-        /* --- CALENDAR --- */
-        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 24px; }
-        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 14px; background: #f5f5f7; border-radius: 12px; cursor: pointer; position: relative; }
-        .cal-day.today { border: 2px solid #007aff; }
-        .cal-day.has-data { font-weight: 600; color: #007aff; }
-        .cal-day.has-data::after { content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 4px; background: #34c759; }
-
-        /* --- HISTORY LIST --- */
-        .history-entry { background: #f5f5f7; padding: 16px; border-radius: 18px; margin-bottom: 12px; position: relative; }
-        .entry-header { display: flex; justify-content: space-between; margin-bottom: 12px; font-weight: 600; }
-        .entry-answer { padding: 6px 0; border-bottom: 1px solid #e8e8ed; font-size: 14px; }
-
-        .head-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.5px; }
-        .hidden { display: none !important; }
-
-        /* MODAL */
-        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: 0.2s; z-index: 1000; }
-        .modal.active { opacity: 1; pointer-events: all; }
-        .modal-card { background: #fff; border-radius: 28px; padding: 28px; width: 100%; max-width: 360px; text-align: center; }
-        .modal-buttons { display: flex; gap: 10px; margin-top: 24px; }
-        .modal-buttons button { flex: 1; padding: 14px; border-radius: 14px; border: none; cursor: pointer; }
-    </style>
+    <title>Cadence · Focused Routine & Reflection Tracker</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="wrap">
         <div class="head-row">
-            <h1>skeleton</h1>
+            <h1>Cadence</h1>
             <div>
                 <button class="icon-btn" onclick="showView('history')">📅</button>
                 <button class="icon-btn" onclick="showView('setup')">⚙️</button>
@@ -108,7 +21,15 @@
         <div class="card">
             <div id="welcomeView">
                 <div style="text-align:center; padding:30px 0;">
-                    <div style="font-size:64px; margin-bottom:16px;">🦴</div>
+                    <div class="app-icon" style="margin-bottom:20px;">
+                        <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="36" cy="36" r="32" stroke="#007aff" stroke-width="2.5" fill="none"/>
+                            <circle cx="36" cy="36" r="24" stroke="#007aff" stroke-width="1.5" opacity="0.4" fill="none"/>
+                            <circle cx="36" cy="36" r="4" fill="#007aff"/>
+                            <line x1="36" y1="36" x2="36" y2="18" stroke="#007aff" stroke-width="2" stroke-linecap="round"/>
+                            <line x1="36" y1="36" x2="50" y2="36" stroke="#007aff" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+                        </svg>
+                    </div>
                     <div id="welcomeGrid"></div>
                 </div>
             </div>
@@ -118,9 +39,9 @@
                     <span id="ctxName" style="font-size:18px; font-weight:600;">Context</span>
                     <span id="stepText" style="font-size:12px; color:#86868b;">0/0</span>
                 </div>
-                
+
                 <div id="resumeBanner" style="background:#f0f7ff; padding:10px; margin-bottom:15px; border-radius:12px; display:none; text-align:center;">
-                    <span style="font-size:13px; color:#007aff;">Session restored.</span> 
+                    <span style="font-size:13px; color:#007aff;">Session restored.</span>
                     <button onclick="resetProgress()" style="border:none; background:none; text-decoration:underline; color:#007aff; font-size:13px;">Restart?</button>
                 </div>
 
@@ -139,11 +60,15 @@
                     <button class="icon-btn" onclick="showView('welcome')">✕</button>
                 </div>
                 <input type="search" id="searchInput" placeholder="Search logs..." oninput="searchHistory()" style="margin-bottom:20px;">
-                
+
                 <div id="calendar" class="calendar"></div>
                 <div id="historyEntries"></div>
-                
+
                 <button id="dayDownloadBtn" class="download-btn hidden" onclick="downloadCurrentDay()">📥 Download This Day</button>
+                <div style="margin-top:16px; display:flex; gap:10px;">
+                    <button class="download-btn" style="flex:1; padding:12px; font-size:14px;" onclick="exportHistoryCSV()">📊 Export CSV</button>
+                    <button class="download-btn" style="flex:1; padding:12px; font-size:14px; background:#34c759;" onclick="exportHistoryMarkdown()">📝 Export Markdown</button>
+                </div>
             </div>
 
             <div id="setupView" class="hidden">
@@ -167,7 +92,7 @@
                 </div>
                 <div id="bankSection" class="section-content collapsed">
                     <button class="download-btn" style="margin-top:0; margin-bottom:16px;" onclick="addToBank()">+ Create New Question</button>
-                    
+
                     <div class="accordion-item" style="border:none;">
                         <div class="accordion-header" style="background:#e8e8ed; border-radius:12px;" onclick="toggleItemExpand('bankList')">
                             <span>Edit Existing Questions</span>
@@ -195,6 +120,23 @@
                         <input type="file" id="importFile" style="display:none" onchange="importBackup(this)">
                         <button class="download-btn" style="background:#f5f5f7; color:#333; border:1px solid #ddd;" onclick="document.getElementById('importFile').click()">📥 Import Backup</button>
                     </div>
+                    <div style="margin-top:20px; padding-top:16px; border-top:1px solid #e8e8ed;">
+                        <h4 style="margin-bottom:12px; font-size:14px; color:#666;">📋 Template Sharing</h4>
+                        <div style="display:flex; gap:10px; margin-bottom:10px;">
+                            <button class="download-btn" style="flex:1; padding:12px; font-size:14px; background:#ff9f0a;" onclick="exportTemplate()">📤 Export Template</button>
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <input type="file" id="templateFile" style="display:none" onchange="importTemplate(this)">
+                            <button class="download-btn" style="flex:1; padding:12px; font-size:14px; background:#f5f5f7; color:#333; border:1px solid #ddd;" onclick="document.getElementById('templateFile').click()">📥 Import Template</button>
+                        </div>
+                    </div>
+                    <div style="margin-top:20px; padding-top:16px; border-top:1px solid #e8e8ed;">
+                        <h4 style="margin-bottom:12px; font-size:14px; color:#666;">Export History</h4>
+                        <div style="display:flex; gap:10px;">
+                            <button class="download-btn" style="flex:1; padding:12px; font-size:14px;" onclick="exportHistoryCSV()">📊 Export CSV</button>
+                            <button class="download-btn" style="flex:1; padding:12px; font-size:14px; background:#34c759;" onclick="exportHistoryMarkdown()">📝 Export Markdown</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -211,538 +153,6 @@
         </div>
     </div>
 
-    <script>
-        // *** STORAGE CONFIG ***
-        const STORAGE = {
-            CONTEXTS: 'sk_ctx_v5',
-            BANK: 'sk_bank_v5',
-            ASSIGNMENTS: 'sk_assign_v5',
-            HISTORY: 'sk_h_v5',
-            PROGRESS: 'sk_p_v5',
-            SETTINGS: 'sk_settings_v5'
-        };
-
-        const DEFAULT_CTX = [{ id: 'morn', l: 'Morning', i: '🌅', order: 0 }];
-        const DEFAULT_SETTINGS = { sections: { assignments: true, bank: false, contexts: false } };
-
-        // STATE
-        let contexts = JSON.parse(localStorage.getItem(STORAGE.CONTEXTS) || JSON.stringify(DEFAULT_CTX));
-        let bank = JSON.parse(localStorage.getItem(STORAGE.BANK) || '[]');
-        let assignments = JSON.parse(localStorage.getItem(STORAGE.ASSIGNMENTS) || '{}');
-        let history = JSON.parse(localStorage.getItem(STORAGE.HISTORY) || '{}');
-        let progress = JSON.parse(localStorage.getItem(STORAGE.PROGRESS) || '{}');
-        let settings = JSON.parse(localStorage.getItem(STORAGE.SETTINGS) || JSON.stringify(DEFAULT_SETTINGS));
-        
-        let activeCtxId = '';
-        let currentQIndex = 0;
-        let answers = {};
-        let currentViewedDate = '';
-
-        // UI STATE FOR ACCORDIONS
-        let expandedItems = new Set(); 
-
-        // --- CORE UI ---
-        function showView(view) {
-            ['welcomeView','loggerView','setupView','historyView'].forEach(id => document.getElementById(id).classList.add('hidden'));
-            document.getElementById(view+'View').classList.remove('hidden');
-            
-            if(view === 'welcome') renderWelcome();
-            if(view === 'setup') renderEditor();
-            if(view === 'history') { renderCalendar(); document.getElementById('historyEntries').innerHTML=''; }
-            renderChips();
-        }
-
-        function renderChips() {
-            const chips = document.getElementById('chipContainer');
-            let html = '';
-            const today = new Date().toISOString().slice(0,10);
-            contexts.sort((a,b)=>a.order-b.order).forEach(ctx => {
-                const isDone = history[today]?.some(x => x.ctx === ctx.id);
-                const isProg = progress[`${today}_${ctx.id}`];
-                let style = '';
-                if(isDone) style = 'border-color:#34c759; background:#f0fff4;';
-                else if(isProg) style = 'border-color:#ff9f0a; background:#fffbf0;';
-                html += `<div class="chip" style="${style}" onclick="startContext('${ctx.id}')">${ctx.i} ${ctx.l}</div>`;
-            });
-            chips.innerHTML = html;
-        }
-
-        function renderWelcome() {
-            const grid = document.getElementById('welcomeGrid');
-            let html = '';
-            contexts.sort((a,b)=>a.order-b.order).forEach(ctx => {
-                html += `<button class="ctx-btn" onclick="startContext('${ctx.id}')"><span>${ctx.i}</span> ${ctx.l}</button>`;
-            });
-            grid.innerHTML = html;
-        }
-
-        // --- LOGGER ---
-        function startContext(id) {
-            activeCtxId = id;
-            const today = new Date().toISOString().slice(0,10);
-            const saved = progress[`${today}_${id}`];
-            
-            if(saved) {
-                currentQIndex = saved.idx;
-                answers = saved.ans;
-                document.getElementById('resumeBanner').style.display = 'block';
-            } else {
-                currentQIndex = 0;
-                answers = {};
-                document.getElementById('resumeBanner').style.display = 'none';
-            }
-
-            const qIds = assignments[id] || [];
-            if(qIds.length === 0) { 
-                modal.show('Empty', 'No questions in this tab.', null); return; 
-            }
-            showView('logger');
-            renderQuestion();
-        }
-
-        function renderQuestion() {
-            const ctx = contexts.find(c => c.id === activeCtxId);
-            const qIds = assignments[activeCtxId];
-            
-            if(currentQIndex >= qIds.length) { completeContext(); return; }
-            
-            const q = bank.find(x => x.id === qIds[currentQIndex]);
-            if(!q) { currentQIndex++; renderQuestion(); return; } 
-
-            document.getElementById('ctxName').innerText = ctx.l;
-            document.getElementById('stepText').innerText = `${currentQIndex+1}/${qIds.length}`;
-            document.getElementById('questionText').innerText = q.l;
-            
-            const area = document.getElementById('inputArea');
-            area.innerHTML = '';
-            
-            const val = answers[q.id];
-
-            if(q.t === 'select' || q.t === 'multi') {
-                (q.o || '').split(',').forEach(opt => {
-                    opt = opt.trim();
-                    const btn = document.createElement('div');
-                    btn.className = 'option-pill';
-                    btn.innerText = opt;
-                    if(q.t==='select' && val===opt) btn.classList.add('active');
-                    if(q.t==='multi' && Array.isArray(val) && val.includes(opt)) btn.classList.add('active');
-                    btn.onclick = () => {
-                        if(q.t==='select') { answers[q.id]=opt; handleNext(); }
-                        else {
-                            if(!Array.isArray(answers[q.id])) answers[q.id]=[];
-                            const i = answers[q.id].indexOf(opt);
-                            if(i>-1) answers[q.id].splice(i,1); else answers[q.id].push(opt);
-                            renderQuestion();
-                        }
-                    };
-                    area.appendChild(btn);
-                });
-            } else if (q.t === 'toggle') {
-                const checked = val === true;
-                area.innerHTML = `<div onclick="toggleBool('${q.id}')" class="option-pill ${checked?'active':''}" style="font-size:20px;">${checked?'YES':'NO'}</div>`;
-            } else if (q.t === 'range') {
-                const num = val || 5;
-                area.innerHTML = `<div style="text-align:center;font-size:40px;color:#007aff;margin-bottom:10px;">${num}</div><input type="range" min="0" max="10" step="0.5" value="${num}" style="width:100%;height:40px;" oninput="updateRange(this,'${q.id}')">`;
-            } else if (q.t === 'time') {
-                area.innerHTML = `<input type="time" value="${val||''}" oninput="answers['${q.id}']=this.value">`;
-            } else {
-                area.innerHTML = `<input type="text" value="${val||''}" placeholder="Type answer..." oninput="answers['${q.id}']=this.value">`;
-            }
-        }
-
-        window.toggleBool = (qid) => { answers[qid] = !answers[qid]; renderQuestion(); };
-        window.updateRange = (el, qid) => { answers[qid] = el.value; el.previousElementSibling.innerText = el.value; };
-
-        function handleSkip() { saveProgress(); moveNext(); }
-        function handleNext() { saveProgress(); moveNext(); }
-        
-        function moveNext() {
-            const qIds = assignments[activeCtxId];
-            if(currentQIndex < qIds.length - 1) { currentQIndex++; renderQuestion(); }
-            else { completeContext(); }
-        }
-        
-        function handleBack() {
-            saveProgress();
-            if(currentQIndex > 0) { currentQIndex--; renderQuestion(); }
-            else showView('welcome');
-        }
-
-        function saveProgress() {
-            const today = new Date().toISOString().slice(0,10);
-            progress[`${today}_${activeCtxId}`] = { idx: currentQIndex, ans: answers };
-            localStorage.setItem(STORAGE.PROGRESS, JSON.stringify(progress));
-            renderChips();
-        }
-        
-        function resetProgress() {
-            const today = new Date().toISOString().slice(0,10);
-            delete progress[`${today}_${activeCtxId}`];
-            localStorage.setItem(STORAGE.PROGRESS, JSON.stringify(progress));
-            startContext(activeCtxId);
-        }
-
-        function completeContext() {
-            const today = new Date().toISOString().slice(0,10);
-            if(!history[today]) history[today] = [];
-            history[today].push({ ctx: activeCtxId, ans: answers, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });
-            localStorage.setItem(STORAGE.HISTORY, JSON.stringify(history));
-            delete progress[`${today}_${activeCtxId}`];
-            localStorage.setItem(STORAGE.PROGRESS, JSON.stringify(progress));
-            modal.show('Saved!', 'Log entry saved.', () => showView('welcome'));
-        }
-
-        // --- HISTORY ---
-        function renderCalendar() {
-            const cal = document.getElementById('calendar');
-            const today = new Date();
-            const y = today.getFullYear();
-            const m = today.getMonth();
-            const daysInMonth = new Date(y, m+1, 0).getDate();
-            const firstDay = new Date(y, m, 1).getDay();
-            
-            let html = '';
-            ['S','M','T','W','T','F','S'].forEach(d => html += `<div style="text-align:center;font-size:12px;color:#888;">${d}</div>`);
-            for(let i=0; i<firstDay; i++) html += '<div></div>';
-            for(let d=1; d<=daysInMonth; d++) {
-                const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                const hasData = history[dateStr]?.length > 0;
-                const isToday = (d === today.getDate());
-                let cls = 'cal-day';
-                if(hasData) cls += ' has-data';
-                if(isToday) cls += ' today';
-                html += `<div class="${cls}" onclick="viewDay('${dateStr}')">${d}</div>`;
-            }
-            cal.innerHTML = html;
-        }
-
-        function viewDay(date) {
-            currentViewedDate = date;
-            const list = document.getElementById('historyEntries');
-            const logs = history[date] || [];
-            document.getElementById('dayDownloadBtn').classList.remove('hidden');
-            
-            if(logs.length === 0) {
-                list.innerHTML = `<div style="text-align:center; padding:20px; color:#999;">No logs for ${date}</div>`;
-                document.getElementById('dayDownloadBtn').classList.add('hidden');
-                return;
-            }
-
-            list.innerHTML = logs.map((l, idx) => {
-                const c = contexts.find(x => x.id === l.ctx) || {l:l.ctx, i:'?'};
-                let content = `<div class="history-entry">
-                    <button onclick="deleteEntry('${date}', ${idx})" style="float:right; border:none; background:none; color:#ff3b30;">✕</button>
-                    <div class="entry-header">${c.i} ${c.l} <span style="font-weight:400; color:#888;">${l.time}</span></div>`;
-                
-                Object.keys(l.ans).forEach(qid => {
-                    const q = bank.find(x => x.id === qid);
-                    if(q) {
-                        let val = l.ans[qid];
-                        if(Array.isArray(val)) val = val.join(', ');
-                        if(val === true) val = 'Yes';
-                        if(val === false) val = 'No';
-                        content += `<div class="entry-answer"><span style="color:#666;">${q.l}:</span> <b>${val}</b></div>`;
-                    }
-                });
-                return content + '</div>';
-            }).join('');
-        }
-        
-        function deleteEntry(date, idx) {
-            if(confirm('Delete this entry?')) {
-                history[date].splice(idx, 1);
-                if(history[date].length===0) delete history[date];
-                localStorage.setItem(STORAGE.HISTORY, JSON.stringify(history));
-                viewDay(date);
-                renderCalendar();
-            }
-        }
-        
-        function searchHistory() {
-            const term = document.getElementById('searchInput').value.toLowerCase();
-            if(!term) { renderCalendar(); document.getElementById('historyEntries').innerHTML=''; return; }
-            document.getElementById('calendar').innerHTML = ''; 
-            const list = document.getElementById('historyEntries');
-            let html = '';
-            Object.keys(history).sort().reverse().forEach(date => {
-                history[date].forEach(l => {
-                    const c = contexts.find(x => x.id === l.ctx) || {l:''};
-                    const searchStr = (c.l + ' ' + JSON.stringify(l.ans)).toLowerCase();
-                    if(searchStr.includes(term)) {
-                        html += `<div class="history-entry"><div class="entry-header">${date} · ${c.l}</div>`;
-                        Object.keys(l.ans).forEach(qid => {
-                             const q = bank.find(x => x.id === qid);
-                             if(q) html += `<div class="entry-answer">${q.l}: ${l.ans[qid]}</div>`;
-                        });
-                        html += `</div>`;
-                    }
-                });
-            });
-            list.innerHTML = html || '<div style="text-align:center; padding:20px;">No matches</div>';
-        }
-
-        // --- SETTINGS (COLLAPSIBLE ITEMS) ---
-        
-        function toggleItemExpand(id) {
-            if(expandedItems.has(id)) expandedItems.delete(id);
-            else expandedItems.add(id);
-            renderEditor();
-        }
-
-        function renderEditor() {
-            // Restore sections state
-            Object.keys(settings.sections).forEach(k => {
-                const el = document.getElementById(k+'Section');
-                const tog = document.getElementById(k+'Toggle');
-                if(settings.sections[k]) { el.classList.remove('collapsed'); tog.innerText='▼'; }
-                else { el.classList.add('collapsed'); tog.innerText='▶'; }
-            });
-
-            // 1. Assignments
-            const assignDiv = document.getElementById('assignmentEditor');
-            let html = '';
-            contexts.sort((a,b)=>a.order-b.order).forEach(ctx => {
-                const isExpanded = expandedItems.has('assign_'+ctx.id);
-                
-                // HEADER with Toolbar
-                html += `<div class="accordion-item">
-                    <div class="accordion-header" onclick="toggleItemExpand('assign_${ctx.id}')">
-                        <span>${ctx.i} ${ctx.l}</span>
-                        <span>${isExpanded ? '▼' : '▶'}</span>
-                    </div>
-                    
-                    <div class="accordion-toolbar">
-                        <select onchange="addToContext('${ctx.id}', this.value); this.value='';" style="width:100%; border-radius:8px; border:1px solid #ddd; background:#f9f9f9; padding:8px;">
-                            <option value="">+ Add Question to ${ctx.l}...</option>
-                            ${bank.filter(b => !(assignments[ctx.id]||[]).includes(b.id)).map(q => `<option value="${q.id}">${q.l}</option>`).join('')}
-                        </select>
-                    </div>
-
-                    <div class="accordion-body ${isExpanded ? '' : 'hidden'}">`;
-                
-                // Content
-                const qIds = assignments[ctx.id] || [];
-                if(qIds.length > 0) {
-                    qIds.forEach((qid, idx) => {
-                        const q = bank.find(x => x.id === qid);
-                        if(q) {
-                            html += `<div class="assigned-item">
-                                <span class="assigned-order">${idx+1}</span>
-                                <span class="assigned-text">${q.l}</span>
-                                <div class="reorder-controls">
-                                    <button class="mini-btn" onclick="moveAssign('${ctx.id}', ${idx}, -1)">↑</button>
-                                    <button class="mini-btn" onclick="moveAssign('${ctx.id}', ${idx}, 1)">↓</button>
-                                    <button class="mini-btn" style="color:red;" onclick="removeFromContext('${ctx.id}', '${qid}')">✕</button>
-                                </div>
-                            </div>`;
-                        }
-                    });
-                } else {
-                    html += `<div style="color:#aaa; font-size:13px;">No questions assigned</div>`;
-                }
-                
-                html += `</div></div>`; // Close Body, Close Item
-            });
-            assignDiv.innerHTML = html;
-
-            // 2. Bank List (Separate from Create)
-            const bankListExpanded = expandedItems.has('bankList');
-            if(bankListExpanded) {
-                 document.getElementById('bankListBody').classList.remove('hidden');
-                 document.getElementById('bankListIcon').innerText = '▼';
-            } else {
-                 document.getElementById('bankListBody').classList.add('hidden');
-                 document.getElementById('bankListIcon').innerText = '▶';
-            }
-            
-            document.getElementById('bankEditor').innerHTML = bank.map(q => {
-                const isExpanded = expandedItems.has('bank_'+q.id);
-                return `
-                <div class="accordion-item" style="border-left: 4px solid #007aff; margin-bottom:10px;">
-                    <div class="accordion-header" onclick="toggleItemExpand('bank_${q.id}')">
-                        <span>${q.l}</span>
-                        <span>${isExpanded ? '▼' : '▶'}</span>
-                    </div>
-                    <div class="accordion-body ${isExpanded ? '' : 'hidden'}">
-                        <div style="display:flex; gap:10px; margin-bottom:5px;">
-                            <input value="${q.l}" onchange="updateBank('${q.id}', 'l', this.value)" style="flex:1; border:1px solid #ddd;">
-                            <button onclick="deleteFromBank('${q.id}')" style="border:none; background:none; color:red;">Delete</button>
-                        </div>
-                        <div style="display:flex; gap:10px;">
-                            <select onchange="updateBank('${q.id}','t',this.value)" style="width:100px; border:1px solid #ddd;">
-                                <option value="text" ${q.t==='text'?'selected':''}>Text</option>
-                                <option value="range" ${q.t==='range'?'selected':''}>Range</option>
-                                <option value="toggle" ${q.t==='toggle'?'selected':''}>Yes/No</option>
-                                <option value="select" ${q.t==='select'?'selected':''}>Select</option>
-                                <option value="multi" ${q.t==='multi'?'selected':''}>Multi</option>
-                                <option value="time" ${q.t==='time'?'selected':''}>Time</option>
-                            </select>
-                            <input value="${q.o||''}" placeholder="Options..." onchange="updateBank('${q.id}','o',this.value)" style="flex:1; display:${(q.t==='select'||q.t==='multi')?'block':'none'}; border:1px solid #ddd;">
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
-
-            // 3. Contexts (Reorder)
-            document.getElementById('contextEditor').innerHTML = contexts.map((c, i) => `
-                <div style="display:flex; gap:5px; margin-bottom:10px; align-items:center;">
-                    <input value="${c.i}" onchange="updateCtx('${c.id}', 'i', this.value)" style="width:40px; text-align:center;">
-                    <input value="${c.l}" onchange="updateCtx('${c.id}', 'l', this.value)" style="flex:1;">
-                    <button class="mini-btn" onclick="moveContext(${i}, -1)">↑</button>
-                    <button class="mini-btn" onclick="moveContext(${i}, 1)">↓</button>
-                    <button class="mini-btn" style="color:red;" onclick="deleteContext('${c.id}')">✕</button>
-                </div>
-            `).join('');
-        }
-
-        // --- EDITOR ACTIONS ---
-        function toggleSection(key) {
-            settings.sections[key] = !settings.sections[key];
-            localStorage.setItem(STORAGE.SETTINGS, JSON.stringify(settings));
-            renderEditor();
-        }
-
-        window.moveAssign = function(ctxId, idx, dir) {
-            const arr = assignments[ctxId];
-            if (dir===-1 && idx>0) { [arr[idx], arr[idx-1]] = [arr[idx-1], arr[idx]]; }
-            if (dir===1 && idx<arr.length-1) { [arr[idx], arr[idx+1]] = [arr[idx+1], arr[idx]]; }
-            saveAll();
-        };
-
-        window.moveContext = function(idx, dir) {
-            if (dir===-1 && idx>0) { [contexts[idx].order, contexts[idx-1].order] = [contexts[idx-1].order, contexts[idx].order]; }
-            if (dir===1 && idx<contexts.length-1) { [contexts[idx].order, contexts[idx+1].order] = [contexts[idx+1].order, contexts[idx].order]; }
-            contexts.sort((a,b)=>a.order-b.order); 
-            saveAll();
-        };
-
-        window.updateBank = function(id, field, val) {
-            const q = bank.find(x => x.id === id);
-            if(q) { q[field] = val; saveAll(); }
-        };
-
-        window.updateCtx = function(id, field, val) {
-            const c = contexts.find(x => x.id === id);
-            if(c) { c[field] = val; saveAll(); }
-        };
-
-        window.addToContext = function(ctxId, qId) {
-            if(!assignments[ctxId]) assignments[ctxId] = [];
-            assignments[ctxId].push(qId);
-            saveAll();
-        };
-
-        window.removeFromContext = function(ctxId, qId) {
-            assignments[ctxId] = assignments[ctxId].filter(x => x !== qId);
-            saveAll();
-        };
-
-        window.addToBank = function() {
-            const newId = 'q' + Date.now();
-            // UNSHIFT adds to top, PUSH adds to bottom
-            bank.unshift({id: newId, l:'New Question', t:'text', o:''});
-            
-            // Auto-expand the "Edit Existing" section if it's closed
-            if(!expandedItems.has('bankList')) expandedItems.add('bankList');
-            expandedItems.add('bank_'+newId);
-            saveAll();
-        };
-
-        window.deleteFromBank = function(id) {
-            if(confirm('Delete?')) {
-                bank = bank.filter(b => b.id !== id);
-                Object.keys(assignments).forEach(k => assignments[k] = assignments[k].filter(x => x !== id));
-                saveAll();
-            }
-        };
-
-        window.addContext = function() {
-            const id = 'ctx' + Date.now();
-            contexts.push({ id, l:'New Tab', i:'📌', order: contexts.length });
-            assignments[id] = [];
-            saveAll();
-        };
-
-        window.deleteContext = function(id) {
-            if(confirm('Delete tab?')) {
-                contexts = contexts.filter(c => c.id !== id);
-                delete assignments[id];
-                saveAll();
-            }
-        };
-
-        function saveAll() {
-            localStorage.setItem(STORAGE.ASSIGNMENTS, JSON.stringify(assignments));
-            localStorage.setItem(STORAGE.BANK, JSON.stringify(bank));
-            localStorage.setItem(STORAGE.CONTEXTS, JSON.stringify(contexts));
-            renderEditor();
-            document.getElementById('autoSaveIndicator').style.opacity = '1';
-            setTimeout(() => document.getElementById('autoSaveIndicator').style.opacity = '0', 1000);
-        }
-
-        // --- BACKUP ---
-        function exportBackup() {
-            const data = { contexts, bank, assignments, history, version:'efficient_v5' };
-            const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `skeleton_backup_${new Date().toISOString().slice(0,10)}.json`;
-            document.body.appendChild(a); a.click();
-        }
-
-        window.importBackup = function(input) {
-            const file = input.files[0];
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const d = JSON.parse(e.target.result);
-                    if(confirm('Restore data?')) {
-                        localStorage.setItem(STORAGE.CONTEXTS, JSON.stringify(d.contexts));
-                        localStorage.setItem(STORAGE.BANK, JSON.stringify(d.bank));
-                        localStorage.setItem(STORAGE.ASSIGNMENTS, JSON.stringify(d.assignments));
-                        localStorage.setItem(STORAGE.HISTORY, JSON.stringify(d.history));
-                        location.reload();
-                    }
-                } catch(err) { alert('Error: '+err.message); }
-            };
-            reader.readAsText(file);
-        };
-
-        window.downloadCurrentDay = function() {
-            if(!currentViewedDate) return;
-            const logs = history[currentViewedDate] || [];
-            let txt = `LOGS: ${currentViewedDate}\n\n`;
-            logs.forEach(l => {
-                const c = contexts.find(x => x.id === l.ctx) || {l:l.ctx};
-                txt += `--- ${c.l} (${l.time}) ---\n`;
-                Object.keys(l.ans).forEach(qid => {
-                    const q = bank.find(x => x.id === qid);
-                    if(q) {
-                        let val = l.ans[qid];
-                        if(Array.isArray(val)) val = val.join(', ');
-                        txt += `${q.l}: ${val}\n`;
-                    }
-                });
-                txt += '\n';
-            });
-            const blob = new Blob([txt], {type:'text/plain'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `log_${currentViewedDate}.txt`;
-            document.body.appendChild(a); a.click();
-        };
-
-        const modal = {
-            el: document.getElementById('modal'),
-            show(t, b, cb) {
-                document.getElementById('modalTitle').innerText = t;
-                document.getElementById('modalBody').innerText = b;
-                const btn = document.getElementById('modalConfirm');
-                btn.onclick = () => { if(cb) cb(); modal.el.classList.remove('active'); };
-                document.getElementById('modalCancel').onclick = () => modal.el.classList.remove('active');
-                modal.el.classList.add('active');
-            }
-        };
-
-        window.onload = () => { renderWelcome(); };
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
